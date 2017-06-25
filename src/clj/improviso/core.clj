@@ -15,8 +15,9 @@
    :body (rum/render-html
           [:html
            [:head [:title "Olá mundo!"]]
-           [:body
-            [:div#app_container "Wonderful things would happen here if you had Javascript enabled..."]]
+           [:body {:style {:border 0 :padding 0 :margin 0}}
+            [:div#app_container {:style {:border 0 :padding 0 :margin 0}}
+             "Wonderful things would happen here if you had Javascript enabled..."]]
            [:script {:type "text/javascript" :src "js/main.js"}]
            [:script {:type "text/javascript"} "improviso.core.main();"]])})
 
