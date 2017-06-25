@@ -34,9 +34,9 @@
                                    (fn []
                                      (let [[w h] (window-size)]
                                        (println "resizing to" w h on-resize)
-                                       (on-resize w h)
                                        (reset! (::window-size state)
-                                               [w h]))))
+                                               [w h])
+                                       (on-resize w h (rum/dom-node state)))))
                 state)
    ;; :after-render (fn [state]
    ;;                 (println "after render" state)

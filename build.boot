@@ -23,6 +23,7 @@
                  [ring/ring-defaults "0.1.5"]
                  [rum "0.10.8"]
                  [com.taoensso/sente "1.11.0"]
+                 [thi.ng/geom "0.0.1178-SNAPSHOT"]
                  [com.taoensso/timbre "4.7.2"]
                  [org.clojure/tools.nrepl "0.2.12" :scope "test"]
                  [weasel "0.7.0" :scope "test"]])
