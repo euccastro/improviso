@@ -16,5 +16,6 @@
   (enable-console-print!)
   (println "Hello!")
   (sente/start-once!)
-  (rum/mount (gl/canvas)
+  (rum/mount (gl/canvas {:on-resize (fn [w h]
+                                      (println "resizering to" w h))})
              (js/document.getElementById "app_container")))

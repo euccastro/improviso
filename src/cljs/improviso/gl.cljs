@@ -22,16 +22,18 @@
                                    (fn [& args]
                                      (println "rendering" args)
                                      (apply render args)))
-                    :did-mount (fn [state]
+                    :did-mount (fn [{[{:keys [on-resize]}] :rum/args :as state}]
                                  (println "did mount" state)
                                  (comment (reset! (::window-size state)
                                                   (window-size)))
                                  (.addEventListener js/window
                                                     "resize"
                                                     (fn []
-                                                      (println "resizing to" (window-size))
-                                                      (reset! (::window-size state)
-                                                              (window-size))))
+                                                      (let [[w h] (window-size)]
+                                                        (println "resizing to" w h on-resize)
+                                                        (on-resize w h)
+                                                        (reset! (::window-size state)
+                                                                [w h]))))
                                  state)
                     :after-render (fn [state]
                                     (println "after render" state)
@@ -48,7 +50,7 @@
                     :will-unmount (fn [state]
                                     (println "will unmount" state)
                                     state)}
-  []
+  [handlers]
   [:canvas {:style {:width (.-innerWidth js/window)
                     :height (.-innerHeight js/window)
                     :padding "0"
