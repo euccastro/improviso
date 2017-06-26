@@ -33,21 +33,24 @@ void main() {
               :color :vec4}
    :attribs {:position :vec2}})
 
-(defn on-resize
-  [w h dom-node]
-  (println "resiYering to" w h dom-node)
-  (let [gl (gl/gl-context dom-node)
+(defn draw
+  [dom-node]
+  (println "drawing on dom node" dom-node)
+  (let [w (.-clientWidth dom-node)
+        h (.-clientHeight dom-node)
+        gl (gl/gl-context dom-node)
         shader (shader/make-shader-from-spec gl line-shader)
         proj (gl/ortho 0 0 w h -1 1)
-        model (-> (line/linestrip2 [0.1 0.1]
-                                   [0.9 0.9]
-                                   [10 10]
-                                   [50 50])
+        cx (/ w 2)
+        cy (/ h 2)
+        model (-> (line/linestrip2 [(- cx 10) (- cy 10)]
+                                   [(+ cx 20) (+ cy 50)])
                   (gl/as-gl-buffer-spec {})
                   (gl/make-buffers-in-spec gl glc/static-draw)
                   (assoc :shader shader)
-                  (update-in [:uniforms] merge {:color [0.4 0.9 0.4 1]}))]
-    (gl/clear-color-and-depth-buffer gl 0.6 0.3 0.6 1 1)
+                  (update-in [:uniforms] merge {:color [0.9 0.4 0.1 1]}))]
+    (println "drawing with size" w h)
+    (gl/clear-color-and-depth-buffer gl 0.3 0.8 0.3 1 1)
     (gl/set-viewport gl 0 0 w h)
     (gl/draw-with-shader gl
                          (assoc-in model [:uniforms :txn] proj))))
@@ -56,5 +59,5 @@ void main() {
   (enable-console-print!)
   (println "Hello!")
   (sente/start-once!)
-  (rum/mount (canvas {:on-resize (fn [& args] (apply on-resize args))})
+  (rum/mount (canvas {:after-render (fn [& args] (apply draw args))})
              (js/document.getElementById "app_container")))
