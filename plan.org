@@ -2,31 +2,22 @@
 
 * Possible goals
 ** A web client and tools for Empire
+* Docs
+** Sistemas de coordeadas:
+*** pixel coordinates (y positivo para embaixo, as in WebGL)
+*** cubic hexagons, x y z, com unidade radio (projectado)
+z positivo para embaixo
+x positivo para nordés
+y positivo para noroeste
+*** empire coordinates
+latitude positivo para embaixo
+longitude de 2 em 2 e alternando pares e impares entre rows
+wraparound
 * Next Actions
 ** hexagon tile functions:
 *** resources:
 http://www.redblobgames.com/grids/hexagons/
-*** coordinate systems:
-**** pixels in the screen
-**** cubic coordinate system
-hence radii
-**** empire coordinate system
-*** draw an hexagon tile
-**** how to represent it logically? i.e., in my game?
-***** dense, sparse?
-****** datomic-like: square-id :x x (:y :z :terrain-type :sea / :land) ...
-******* portanto, incorporar datascript? si, se vamos ter isto no cliente.
-**** what coordinate system for the world?
-read tutorial de hex grids para refrescar
-***** x y z so we can just use render?
-si, e a unidade é a determinada polo sistema de coordenadas axial
-***** empire coordinates?
-si, for display. empregar só essas coordenadas
-***** center + radius?
-***** scale?
-**** bonus: in some canonical coordinates so we can transform later for zoom & pan
 *** highlight the hexagon under the mouse
 **** bonus: taking into account zoom & pan
-*** fit the whole map into the window
 *** select a square in the map and fit it into the window
 ** gl context recovery handler
