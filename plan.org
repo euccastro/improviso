@@ -1,2 +1,16 @@
+#+STARTUP: indent
+
+* Possible goals
+** A web client and tools for Empire
 * Next Actions
-** import webgl (thi.ng/geom)
+** hexagon tile functions:
+*** resources:
+http://www.redblobgames.com/grids/hexagons/
+*** draw an hexagon tile
+**** how to represent it logically? i.e., in my game?
+***** dense, sparse?
+**** bonus: in some canonical coordinates so we can transform later for zoom & pan
+*** highlight the hexagon under the mouse
+**** bonus: taking into account zoom & pan
+*** fit the whole map into the window
+*** select a square in the map and fit it into the window
