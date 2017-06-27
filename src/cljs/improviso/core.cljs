@@ -52,24 +52,50 @@ void main() {
               :color :vec4}
    :attribs {:position :vec2}})
 
-(defn draw
-  [dom-node]
-  (println "drawing on dom node" dom-node)
-  (let [w (.-clientWidth dom-node)
-        h (.-clientHeight dom-node)
+(defn on-resize [state]
+  (let [w (.-innerWidth js/window)
+        h (.-innerHeight js/window)
+        proj (gl/ortho 0 0 w h -1 1)
         map-id (d/q '[:find ?m . :where [?m :map/cols]] @conn)
         map-ent (d/entity @conn map-id)
         hradii (hex/map-width (:map/cols map-ent))
         vradii (hex/map-height (:map/rows map-ent))
-        radius (min (/ w hradii) (/ h vradii))
-        map-w (* radius hradii)
-        map-h (* radius vradii)
+        radius (/ (min (/ w hradii) (/ h vradii)) 2)  ; XXX / 2
+        map-w-px (* radius hradii)
+        map-h-px (* radius vradii)]
+    (println "on-resize handler" w h)
+    (swap! (:user-data state)
+           #(-> %
+                (update
+                 :view-xf
+                 merge
+                 {:window-width w
+                  :window-height h
+                  :projection proj
+                  :radius-px radius
+                  :map-width-px map-w-px
+                  :map-height-px map-h-px})
+                (assoc :map-id map-id)))))
+
+(defn draw
+  [state]
+  (let [{{:keys [window-width
+                 window-height
+                 projection
+                 radius-px
+                 map-width-px
+                 map-height-px]} :view-xf
+         map-id :map-id
+         selected-hex :selected-hex}
+        @(:user-data state)
+        dom-node (rum/dom-node state)
         gl (gl/gl-context dom-node)
         shader (shader/make-shader-from-spec gl line-shader)
-        proj (gl/ortho 0 0 w h -1 1)
         model-txn (-> M44
-                      (geom/translate (vec3 (/ w 2) (/ h 2) 0))
-                      (math/* (geom/scale M44 (vec3 (/  radius 2) (/ radius 2) 1))))
+                      (geom/translate (vec3 (/ window-width 2)
+                                            (/ window-height 2)
+                                            0))
+                      (math/* (geom/scale M44 (vec3 radius-px radius-px 1))))
         wf hex/width-factor
         model (-> (line/linestrip2 [0 1]
                                    [wf 0.5]
@@ -81,30 +107,54 @@ void main() {
                   (gl/as-gl-buffer-spec {})
                   (gl/make-buffers-in-spec gl glc/static-draw)
                   (assoc :shader shader))]
-    (println "drawing with size" w h map-id map-ent (:map/rows map-ent) radius)
     (gl/clear-color-and-depth-buffer gl 0.3 0.3 0.3 1 1)
-    (gl/set-viewport gl 0 0 w h)
-    (doseq [{:keys [hex/x hex/y hex/z hex/color]}
+    (gl/set-viewport gl 0 0 window-width window-height)
+    (doseq [{:keys [db/id hex/x hex/y hex/z hex/color]}
             (:map/hexes (d/pull @conn '[{:map/hexes [*]}] map-id))]
-      (do
-        (println "entry" x y z color hex/x-unit hex/y-unit hex/z-unit)
-        (gl/draw-with-shader gl
-                             (-> model
-                                 (assoc-in [:uniforms :color] color)
-                                 (assoc-in [:uniforms :txn]
-                                           (math/*
-                                            proj
-                                            (geom/translate
-                                             model-txn
-                                             (math/+
-                                              (math/* hex/x-unit x)
-                                              (math/+
-                                               (math/* hex/y-unit y)
-                                               (math/* hex/z-unit z))))))))))))
+      (gl/draw-with-shader gl
+                           (-> model
+                               (assoc-in [:uniforms :color]
+                                         (if (= id selected-hex)
+                                           [1 1 1 1]
+                                           color))
+                               (assoc-in [:uniforms :txn]
+                                         (math/*
+                                          projection
+                                          (geom/translate
+                                           model-txn
+                                           (math/+
+                                            (math/* hex/x-unit x)
+                                            (math/+
+                                             (math/* hex/y-unit y)
+                                             (math/* hex/z-unit z)))))))))))
+
+(defn on-mouse-move [state e]
+  (let [{{:keys [window-width
+                 window-height
+                 radius-px]} :view-xf
+         map-id :map-id}
+        @(:user-data state)
+        ;; pan?
+        mouse-x-px (- (.-clientX e) (/ window-width 2))
+        mouse-y-px (- (.-clientY e) (/ window-height 2))
+        mouse-x (/ mouse-x-px radius-px)
+        mouse-y (/ mouse-y-px radius-px)
+        [x y z] (hex/px->cube mouse-x mouse-y)
+        hex (d/q '[:find ?c .
+                   :in $ ?x ?y ?z
+                   :where
+                   [?c :hex/x ?x]
+                   [?c :hex/y ?y]
+                   [?c :hex/z ?z]]
+                 @conn x y z)]
+    (println "x y z" x y z)
+    (swap! (:user-data state) assoc :selected-hex hex)))
 
 (defn ^:export main []
   (enable-console-print!)
   (println "Hello!")
   (sente/start-once!)
-  (rum/mount (canvas {:after-render (fn [& args] (apply draw args))})
+  (rum/mount (canvas {:after-render (fn [& args] (apply draw args))
+                      :on-mouse-move (fn [& args] (apply on-mouse-move args))
+                      :on-resize (fn [& args] (apply on-resize args))})
              (js/document.getElementById "app_container")))

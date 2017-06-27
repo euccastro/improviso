@@ -21,3 +21,27 @@
 (def y-unit (vec3 (- width-factor) -0.5 0))
 
 (def z-unit (vec3 0 1 0))
+
+(defn cube-round [x y z]
+  ;; http://www.redblobgames.com/grids/hexagons/#rounding
+  (let [rx (Math/round x)
+        ry (Math/round y)
+        rz (Math/round z)
+        dx (Math/abs (- rx x))
+        dy (Math/abs (- ry y))
+        dz (Math/abs (- rz z))]
+    (cond (and (< dy dx) (< dz dx)) [(- (+ ry rz)) ry rz]
+          (and (< dx dy) (< dz dy)) [rx (- (+ rx rz)) rz]
+          :else [rx ry (- (+ rx ry))])))
+
+(def sqrt-3-over-3 (/ (sqrt 3) 3))
+(def two-thirds (/ 2 3))
+
+(defn px->cube
+  "px and py are assumed to be normalized to radius and offset"
+  [px py]
+  (let [x (- (* px sqrt-3-over-3)
+             (/ py 3))
+        z (* py two-thirds)
+        y (- (+ x z))]
+    (cube-round x y z)))

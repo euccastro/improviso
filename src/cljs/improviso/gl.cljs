@@ -11,16 +11,16 @@
 (defn on-resize [{[{resize-handler :on-resize}] :rum/args
                   react-comp :rum/react-component
                   :as state}]
-  (let [[w h] (window-size)]
-    (println "resizing to.." w h)
+    (println "resizing to.." (window-size))
     (when resize-handler
-      (resize-handler w h (rum/dom-node state)))
-    (rum/request-render react-comp)))
+      (resize-handler state))
+    (rum/request-render react-comp))
 
-(rum/defc canvas <
+(rum/defcs canvas <
   rum/static
+  (rum/local {} :user-data)
   {
-   ;; :init (fn [state props]
+   ;; :init (fn [state props]datomic pull
    ;;         (println "init" state props)
    ;;         state)
    ;; :will-mount (fn [state]
@@ -36,12 +36,13 @@
    ;;                  (apply render args)))
    :did-mount (fn [state]
                 (let [handler #(on-resize state)]
+                  (handler)
                   (.addEventListener js/window
                                      "resize"
                                      handler)
                   (assoc state ::on-resize handler)))
    :after-render (fn [{[{:keys [after-render]}] :rum/args :as state}]
-                   (when after-render (after-render (rum/dom-node state)))
+                   (when after-render (after-render state))
                    state)
    ;; :did-remount (fn [old-state state]
    ;;                (println "did remount" old-state state)
@@ -58,7 +59,7 @@
                      (.removeEventListener js/window "resize" on-resize))
                    (dissoc state ::on-resize))
    }
-  [handlers]
+  [state handlers]
   (println "rendering")
   (let [[w h] (window-size)]
     [:canvas
@@ -70,5 +71,7 @@
               :margin "0"
               :border "0"
               ;; magenta as sentinel color
-              :background-color "#ff00ff"}}]))
+              :background-color "#ff00ff"}
+      :on-mouse-move (when-let [handler (:on-mouse-move handlers)]
+                       (fn [e] (handler state e)))}]))
 
