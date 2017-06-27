@@ -15,7 +15,7 @@
                  [org.clojure/clojurescript "1.9.36"]
                  [compojure "1.4.0"]
                  [org.clojure/core.async "0.2.374"]
-                 [datascript "0.15.2"]
+                 [datascript "0.16.1"]
                  [com.datomic/datomic-free "0.9.5544" :exclusions [com.google.guava/guava]]
                  [environ "1.0.3"]
                  [http-kit "2.1.19"]  ;; same as used by boot-http
