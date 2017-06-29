@@ -60,7 +60,6 @@
                    (dissoc state ::on-resize))
    }
   [state handlers]
-  (println "rendering")
   (let [[w h] (window-size)]
     [:canvas
      {:width w
@@ -72,6 +71,12 @@
               :border "0"
               ;; magenta as sentinel color
               :background-color "#ff00ff"}
+      :on-mouse-down (when-let [handler (:on-mouse-down handlers)]
+                       (fn [e] (handler state e)))
+      :on-mouse-up (when-let [handler (:on-mouse-up handlers)]
+                       (fn [e] (handler state e)))
+      :on-mouse-leave (when-let [handler (:on-mouse-leave handlers)]
+                        (fn [e] (handler state e)))
       :on-mouse-move (when-let [handler (:on-mouse-move handlers)]
                        (fn [e] (handler state e)))}]))
 

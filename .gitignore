@@ -1,3 +1,4 @@
 target/*
 .nrepl-port
 .nrepl-history
+.cljs_rhino_repl/*

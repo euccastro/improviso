@@ -63,7 +63,6 @@ void main() {
         radius (/ (min (/ w hradii) (/ h vradii)) 2)  ; XXX / 2
         map-w-px (* radius hradii)
         map-h-px (* radius vradii)]
-    (println "on-resize handler" w h)
     (swap! (:user-data state)
            #(-> %
                 (update
@@ -75,14 +74,18 @@ void main() {
                   :radius-px radius
                   :map-width-px map-w-px
                   :map-height-px map-h-px})
+                (update
+                 :view-xf
+                 (fn [m] (merge {:eye-x 0 :eye-y 0} m)))
                 (assoc :map-id map-id)))))
 
-(defn draw
-  [state]
+(defn draw [state]
   (let [{{:keys [window-width
                  window-height
                  projection
                  radius-px
+                 eye-x
+                 eye-y
                  map-width-px
                  map-height-px]} :view-xf
          map-id :map-id
@@ -95,7 +98,8 @@ void main() {
                       (geom/translate (vec3 (/ window-width 2)
                                             (/ window-height 2)
                                             0))
-                      (math/* (geom/scale M44 (vec3 radius-px radius-px 1))))
+                      (math/* (geom/scale M44 (vec3 radius-px radius-px 1)))
+                      (geom/translate (vec3 eye-x eye-y 0)))
         wf hex/width-factor
         model (-> (line/linestrip2 [0 1]
                                    [wf 0.5]
@@ -129,17 +133,25 @@ void main() {
                                              (math/* hex/z-unit z)))))))))))
 
 (defn on-mouse-move [state e]
+  ; XXX: flatten this structure
   (let [{{:keys [window-width
                  window-height
+                 eye-x
+                 eye-y
                  radius-px]} :view-xf
+         {:keys [eye0-x
+                 eye0-y
+                 anchor-x
+                 anchor-y]} :drag0
          map-id :map-id}
         @(:user-data state)
         ;; pan?
         mouse-x-px (- (.-clientX e) (/ window-width 2))
         mouse-y-px (- (.-clientY e) (/ window-height 2))
-        mouse-x (/ mouse-x-px radius-px)
-        mouse-y (/ mouse-y-px radius-px)
+        mouse-x (- (/ mouse-x-px radius-px) eye-x)
+        mouse-y (- (/ mouse-y-px radius-px) eye-y)
         [x y z] (hex/px->cube mouse-x mouse-y)
+        ;; XXX: remember last hex coords and only look for new one if not the same?
         hex (d/q '[:find ?c .
                    :in $ ?x ?y ?z
                    :where
@@ -147,14 +159,41 @@ void main() {
                    [?c :hex/y ?y]
                    [?c :hex/z ?z]]
                  @conn x y z)]
-    (println "x y z" x y z)
-    (swap! (:user-data state) assoc :selected-hex hex)))
+    (swap! (:user-data state)
+           (fn [old]
+             (cond-> old
+               true (assoc :selected-hex hex)
+               anchor-x (update :view-xf
+                                merge
+                                {:eye-x (+ eye0-x (/ (- (.-clientX e) anchor-x) radius-px))
+                                 :eye-y (+ eye0-y (/ (- (.-clientY e) anchor-y) radius-px))}))))))
+
+(defn end-drag [state]
+  (swap! (:user-data state) dissoc :drag0))
+
+(defn on-mouse-down [state e]
+  (swap! (:user-data state)
+         (fn [old-user-data]
+           (assoc old-user-data
+                  :drag0
+                  {:eye0-x (get-in old-user-data [:view-xf :eye-x])
+                   :eye0-y (get-in old-user-data [:view-xf :eye-y])
+                   :anchor-x (.-clientX e)
+                   :anchor-y (.-clientY e)}))))
+
+(defn on-mouse-up [state e]
+  (end-drag state))
+
+(defn on-mouse-leave [state e]
+  (end-drag state))
 
 (defn ^:export main []
   (enable-console-print!)
-  (println "Hello!")
   (sente/start-once!)
   (rum/mount (canvas {:after-render (fn [& args] (apply draw args))
+                      :on-mouse-down (fn [& args] (apply on-mouse-down args))
+                      :on-mouse-up (fn [& args] (apply on-mouse-up args))
+                      :on-mouse-leave (fn [& args] (apply on-mouse-leave args))
                       :on-mouse-move (fn [& args] (apply on-mouse-move args))
                       :on-resize (fn [& args] (apply on-resize args))})
              (js/document.getElementById "app_container")))
