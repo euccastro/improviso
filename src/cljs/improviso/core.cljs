@@ -66,32 +66,27 @@ void main() {
         map-w-px (* radius hradii)
         map-h-px (* radius vradii)]
     (swap! (:user-data state)
-           #(-> %
-                (update
-                 :view-xf
-                 merge
-                 {:window-width w
-                  :window-height h
-                  :projection proj
-                  :radius-px radius
-                  :map-width-px map-w-px
-                  :map-height-px map-h-px})
-                (update
-                 :view-xf
-                 (fn [m] (merge {:eye-x 0 :eye-y 0} m)))
-                (assoc :map-id map-id)))))
+           #(merge {:eye-x 0 :eye-y 0}
+                   %
+                   {:window-width w
+                    :window-height h
+                    :projection proj
+                    :radius-px radius
+                    :map-width-px map-w-px
+                    :map-height-px map-h-px
+                    :map-id map-id}))))
 
 (defn draw [state]
-  (let [{{:keys [window-width
-                 window-height
-                 projection
-                 radius-px
-                 eye-x
-                 eye-y
-                 map-width-px
-                 map-height-px]} :view-xf
-         map-id :map-id
-         selected-hex :selected-hex}
+  (let [{:keys [window-width
+                window-height
+                projection
+                radius-px
+                eye-x
+                eye-y
+                map-width-px
+                map-height-px
+                map-id
+                selected-hex]}
         @(:user-data state)
         dom-node (rum/dom-node state)
         gl (gl/gl-context dom-node)
@@ -136,16 +131,16 @@ void main() {
 
 (defn on-mouse-move [state e]
   ; XXX: flatten this structure
-  (let [{{:keys [window-width
-                 window-height
-                 eye-x
-                 eye-y
-                 radius-px]} :view-xf
-         {:keys [eye0-x
-                 eye0-y
-                 anchor-x
-                 anchor-y]} :drag0
-         map-id :map-id}
+  (let [{:keys [window-width
+                window-height
+                eye-x
+                eye-y
+                radius-px
+                eye0-x
+                eye0-y
+                anchor-x
+                anchor-y
+                map-id]}
         @(:user-data state)
         ;; pan?
         mouse-x-px (- (.-clientX e) (/ window-width 2))
@@ -165,23 +160,22 @@ void main() {
            (fn [old]
              (cond-> old
                true (assoc :selected-hex hex)
-               anchor-x (update :view-xf
-                                merge
-                                {:eye-x (+ eye0-x (/ (- (.-clientX e) anchor-x) radius-px))
-                                 :eye-y (+ eye0-y (/ (- (.-clientY e) anchor-y) radius-px))}))))))
+               anchor-x (merge
+                         {:eye-x (+ eye0-x (/ (- (.-clientX e) anchor-x) radius-px))
+                          :eye-y (+ eye0-y (/ (- (.-clientY e) anchor-y) radius-px))}))))))
 
 (defn end-drag [state]
-  (swap! (:user-data state) dissoc :drag0))
+  (swap! (:user-data state) dissoc :anchor-x :anchor-y :eye0-x :eye0-y))
 
 (defn on-mouse-down [state e]
   (swap! (:user-data state)
-         (fn [old-user-data]
-           (assoc old-user-data
-                  :drag0
-                  {:eye0-x (get-in old-user-data [:view-xf :eye-x])
-                   :eye0-y (get-in old-user-data [:view-xf :eye-y])
-                   :anchor-x (.-clientX e)
-                   :anchor-y (.-clientY e)}))))
+         (fn [old]
+           (merge
+            old
+            {:eye0-x (:eye-x old)
+             :eye0-y (:eye-y old)
+             :anchor-x (.-clientX e)
+             :anchor-y (.-clientY e)}))))
 
 (defn on-mouse-up [state e]
   (end-drag state))
@@ -191,13 +185,10 @@ void main() {
 
 (defn on-wheel [state e]
   (swap! (:user-data state)
-         update
-         :view-xf
-         (fn [{:keys [radius-px eye-x eye-y] :as old}]
+         (fn [{:keys [window-width window-height radius-px eye-x eye-y] :as old}]
            (let [scale (+ 1 (* (.-deltaY e) wheel-scale-factor))
-                 dom-node (rum/dom-node state)
-                 mouse-x (+ eye-x (/ (- (.-clientX e) (/ (.-clientWidth dom-node) 2)) radius-px))
-                 mouse-y (+ eye-y (/ (- (.-clientY e) (/ (.-clientHeight dom-node) 2)) radius-px))]
+                 mouse-x (+ eye-x (/ (- (.-clientX e) (/ window-width 2)) radius-px))
+                 mouse-y (+ eye-y (/ (- (.-clientY e) (/ window-height 2)) radius-px))]
              (merge old
                     {:radius-px (* radius-px scale)
                      :eye-x (+ mouse-x (* (- eye-x mouse-x) scale))

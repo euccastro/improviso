@@ -15,8 +15,6 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
-** center zoom on mouse
-** gl context loss/recovery handler
 ** cleanup, XXXs
-*** flatten state
 *** embrace and standardize on thi.ng vectors
+** gl context loss/recovery handler
