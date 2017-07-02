@@ -198,7 +198,6 @@ void main() {
                  dom-node (rum/dom-node state)
                  mouse-x (+ eye-x (/ (- (.-clientX e) (/ (.-clientWidth dom-node) 2)) radius-px))
                  mouse-y (+ eye-y (/ (- (.-clientY e) (/ (.-clientHeight dom-node) 2)) radius-px))]
-             (println "mouse x/y" (.-clientHeight dom-node) (.-innerHeight js/window))
              (merge old
                     {:radius-px (* radius-px scale)
                      :eye-x (+ mouse-x (* (- eye-x mouse-x) scale))
