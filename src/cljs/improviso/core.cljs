@@ -191,10 +191,18 @@ void main() {
 
 (defn on-wheel [state e]
   (swap! (:user-data state)
-         update-in
-         [:view-xf :radius-px]
-         *
-         (+ 1 (* (.-deltaY e) wheel-scale-factor))))
+         update
+         :view-xf
+         (fn [{:keys [radius-px eye-x eye-y] :as old}]
+           (let [scale (+ 1 (* (.-deltaY e) wheel-scale-factor))
+                 dom-node (rum/dom-node state)
+                 mouse-x (+ eye-x (/ (- (.-clientX e) (/ (.-clientWidth dom-node) 2)) radius-px))
+                 mouse-y (+ eye-y (/ (- (.-clientY e) (/ (.-clientHeight dom-node) 2)) radius-px))]
+             (println "mouse x/y" (.-clientHeight dom-node) (.-innerHeight js/window))
+             (merge old
+                    {:radius-px (* radius-px scale)
+                     :eye-x (+ mouse-x (* (- eye-x mouse-x) scale))
+                     :eye-y (+ mouse-y (* (- eye-y mouse-y) scale))})))))
 
 (defn ^:export main []
   (enable-console-print!)
