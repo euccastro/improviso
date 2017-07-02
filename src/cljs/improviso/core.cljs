@@ -19,6 +19,8 @@
             [thi.ng.geom.vector :as vec :refer (vec3)]
             [thi.ng.math.core :as math]))
 
+(def wheel-scale-factor 0.001)
+
 (enable-console-print!)
 
 (defn init-map [conn]
@@ -187,6 +189,13 @@ void main() {
 (defn on-mouse-leave [state e]
   (end-drag state))
 
+(defn on-wheel [state e]
+  (swap! (:user-data state)
+         update-in
+         [:view-xf :radius-px]
+         *
+         (+ 1 (* (.-deltaY e) wheel-scale-factor))))
+
 (defn ^:export main []
   (enable-console-print!)
   (sente/start-once!)
@@ -195,5 +204,6 @@ void main() {
                       :on-mouse-up (fn [& args] (apply on-mouse-up args))
                       :on-mouse-leave (fn [& args] (apply on-mouse-leave args))
                       :on-mouse-move (fn [& args] (apply on-mouse-move args))
-                      :on-resize (fn [& args] (apply on-resize args))})
+                      :on-resize (fn [& args] (apply on-resize args))
+                      :on-wheel (fn [& args] (apply on-wheel args))})
              (js/document.getElementById "app_container")))

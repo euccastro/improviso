@@ -78,5 +78,7 @@
       :on-mouse-leave (when-let [handler (:on-mouse-leave handlers)]
                         (fn [e] (handler state e)))
       :on-mouse-move (when-let [handler (:on-mouse-move handlers)]
+                       (fn [e] (handler state e)))
+      :on-wheel (when-let [handler (:on-wheel handlers)]
                        (fn [e] (handler state e)))}]))
 

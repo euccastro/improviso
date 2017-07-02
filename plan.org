@@ -6,6 +6,7 @@
 ** Coordinate system:
 *** pixel coordinates (y positivo para embaixo, as in WebGL)
 *** cubic hexagons, x y z, com unidade radio (projectado)
+http://www.redblobgames.com/grids/hexagons/
 z positivo para embaixo
 x positivo para nordés
 y positivo para noroeste
@@ -14,16 +15,6 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
-** zoom & pan
-*** mouse move handler
-**** já tenho!
-*** mouse down & up handler
-*** ver zoom & pan em proxy_history.
-** hexagon tile functions:
-*** resources:
-http://www.redblobgames.com/grids/hexagons/
-*** highlight the hexagon under the mouse
-**** bonus: taking into account zoom & pan
-***** hence, zoom & pan
-*** select a square in the map and fit it into the window
+** zoom
+*** wheel handler
 ** gl context recovery handler
