@@ -16,7 +16,7 @@
             [thi.ng.geom.line :as line]
             [thi.ng.geom.matrix :as mat :refer (M44)]
             [thi.ng.geom.rect :as rect]
-            [thi.ng.geom.vector :as vec :refer (vec3)]
+            [thi.ng.geom.vector :as vec :refer (vec2 vec3)]
             [thi.ng.math.core :as math]))
 
 (def wheel-scale-factor 0.001)
@@ -66,7 +66,7 @@ void main() {
         map-w-px (* radius hradii)
         map-h-px (* radius vradii)]
     (swap! (:user-data state)
-           #(merge {:eye-x 0 :eye-y 0}
+           #(merge {:eye-pos (vec2 0 0)}
                    %
                    {:window-width w
                     :window-height h
@@ -81,8 +81,7 @@ void main() {
                 window-height
                 projection
                 radius-px
-                eye-x
-                eye-y
+                eye-pos
                 map-width-px
                 map-height-px
                 map-id
@@ -96,7 +95,7 @@ void main() {
                                             (/ window-height 2)
                                             0))
                       (math/* (geom/scale M44 (vec3 radius-px radius-px 1)))
-                      (geom/translate (vec3 eye-x eye-y 0)))
+                      (geom/translate eye-pos))
         wf hex/width-factor
         model (-> (line/linestrip2 [0 1]
                                    [wf 0.5]
@@ -133,8 +132,7 @@ void main() {
   ; XXX: flatten this structure
   (let [{:keys [window-width
                 window-height
-                eye-x
-                eye-y
+                eye-pos
                 radius-px
                 eye0-x
                 eye0-y
@@ -145,8 +143,8 @@ void main() {
         ;; pan?
         mouse-x-px (- (.-clientX e) (/ window-width 2))
         mouse-y-px (- (.-clientY e) (/ window-height 2))
-        mouse-x (- (/ mouse-x-px radius-px) eye-x)
-        mouse-y (- (/ mouse-y-px radius-px) eye-y)
+        mouse-x (- (/ mouse-x-px radius-px) (eye-pos 0))
+        mouse-y (- (/ mouse-y-px radius-px) (eye-pos 1))
         [x y z] (hex/px->cube mouse-x mouse-y)
         ;; XXX: remember last hex coords and only look for new one if not the same?
         hex (d/q '[:find ?c .
@@ -161,8 +159,8 @@ void main() {
              (cond-> old
                true (assoc :selected-hex hex)
                anchor-x (merge
-                         {:eye-x (+ eye0-x (/ (- (.-clientX e) anchor-x) radius-px))
-                          :eye-y (+ eye0-y (/ (- (.-clientY e) anchor-y) radius-px))}))))))
+                         {:eye-pos (vec2 (+ eye0-x (/ (- (.-clientX e) anchor-x) radius-px))
+                                         (+ eye0-y (/ (- (.-clientY e) anchor-y) radius-px)))}))))))
 
 (defn end-drag [state]
   (swap! (:user-data state) dissoc :anchor-x :anchor-y :eye0-x :eye0-y))
@@ -172,8 +170,8 @@ void main() {
          (fn [old]
            (merge
             old
-            {:eye0-x (:eye-x old)
-             :eye0-y (:eye-y old)
+            {:eye0-x ((:eye-pos old) 0)
+             :eye0-y ((:eye-pos old) 1)
              :anchor-x (.-clientX e)
              :anchor-y (.-clientY e)}))))
 
@@ -185,14 +183,14 @@ void main() {
 
 (defn on-wheel [state e]
   (swap! (:user-data state)
-         (fn [{:keys [window-width window-height radius-px eye-x eye-y] :as old}]
+         (fn [{:keys [window-width window-height radius-px eye-pos] :as old}]
            (let [scale (+ 1 (* (.-deltaY e) wheel-scale-factor))
-                 mouse-x (+ eye-x (/ (- (.-clientX e) (/ window-width 2)) radius-px))
-                 mouse-y (+ eye-y (/ (- (.-clientY e) (/ window-height 2)) radius-px))]
+                 mouse-x (+ (eye-pos 0) (/ (- (.-clientX e) (/ window-width 2)) radius-px))
+                 mouse-y (+ (eye-pos 1) (/ (- (.-clientY e) (/ window-height 2)) radius-px))]
              (merge old
                     {:radius-px (* radius-px scale)
-                     :eye-x (+ mouse-x (* (- eye-x mouse-x) scale))
-                     :eye-y (+ mouse-y (* (- eye-y mouse-y) scale))})))))
+                     :eye-pos (vec2 (+ mouse-x (* (- (eye-pos 0) mouse-x) scale))
+                                    (+ mouse-y (* (- (eye-pos 1) mouse-y) scale)))})))))
 
 (defn ^:export main []
   (enable-console-print!)
