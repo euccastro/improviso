@@ -62,17 +62,13 @@ void main() {
         map-ent (d/entity @conn map-id)
         hradii (hex/map-width (:map/cols map-ent))
         vradii (hex/map-height (:map/rows map-ent))
-        radius (/ (min (/ w hradii) (/ h vradii)) 2)  ; XXX / 2
-        map-w-px (* radius hradii)
-        map-h-px (* radius vradii)]
+        radius (/ (min (/ w hradii) (/ h vradii)) 2)] ; XXX / 2
     (swap! (:user-data state)
            #(merge {:eye-pos (vec2 0 0)}
                    %
                    {:window-size (vec2 w h)
                     :projection proj
                     :radius-px radius
-                    :map-width-px map-w-px
-                    :map-height-px map-h-px
                     :map-id map-id}))))
 
 (defn draw [state]
@@ -80,8 +76,6 @@ void main() {
                 projection
                 radius-px
                 eye-pos
-                map-width-px
-                map-height-px
                 map-id
                 selected-hex]}
         @(:user-data state)
@@ -130,8 +124,7 @@ void main() {
                 window-height
                 eye-pos
                 radius-px
-                eye0-x
-                eye0-y
+                eye0-pos
                 anchor-x
                 anchor-y
                 map-id]}
@@ -155,19 +148,18 @@ void main() {
              (cond-> old
                true (assoc :selected-hex hex)
                anchor-x (merge
-                         {:eye-pos (vec2 (+ eye0-x (/ (- (.-clientX e) anchor-x) radius-px))
-                                         (+ eye0-y (/ (- (.-clientY e) anchor-y) radius-px)))}))))))
+                         {:eye-pos (vec2 (+ (:x eye0-pos) (/ (- (.-clientX e) anchor-x) radius-px))
+                                         (+ (:y eye0-pos) (/ (- (.-clientY e) anchor-y) radius-px)))}))))))
 
 (defn end-drag [state]
-  (swap! (:user-data state) dissoc :anchor-x :anchor-y :eye0-x :eye0-y))
+  (swap! (:user-data state) dissoc :anchor-x :anchor-y :eye0-pos))
 
 (defn on-mouse-down [state e]
   (swap! (:user-data state)
          (fn [old]
            (merge
             old
-            {:eye0-x ((:eye-pos old) 0)
-             :eye0-y ((:eye-pos old) 1)
+            {:eye0-pos (:eye-pos old)
              :anchor-x (.-clientX e)
              :anchor-y (.-clientY e)}))))
 
