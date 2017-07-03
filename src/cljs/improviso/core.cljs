@@ -68,8 +68,7 @@ void main() {
     (swap! (:user-data state)
            #(merge {:eye-pos (vec2 0 0)}
                    %
-                   {:window-width w
-                    :window-height h
+                   {:window-size (vec2 w h)
                     :projection proj
                     :radius-px radius
                     :map-width-px map-w-px
@@ -77,8 +76,7 @@ void main() {
                     :map-id map-id}))))
 
 (defn draw [state]
-  (let [{:keys [window-width
-                window-height
+  (let [{:keys [window-size
                 projection
                 radius-px
                 eye-pos
@@ -91,9 +89,7 @@ void main() {
         gl (gl/gl-context dom-node)
         shader (shader/make-shader-from-spec gl line-shader)
         model-txn (-> M44
-                      (geom/translate (vec3 (/ window-width 2)
-                                            (/ window-height 2)
-                                            0))
+                      (geom/translate (math/* window-size 0.5))
                       (math/* (geom/scale M44 (vec3 radius-px radius-px 1)))
                       (geom/translate eye-pos))
         wf hex/width-factor
@@ -108,7 +104,7 @@ void main() {
                   (gl/make-buffers-in-spec gl glc/static-draw)
                   (assoc :shader shader))]
     (gl/clear-color-and-depth-buffer gl 0.3 0.3 0.3 1 1)
-    (gl/set-viewport gl 0 0 window-width window-height)
+    (gl/set-viewport gl 0 0 (:x window-size) (:y window-size))
     (doseq [{:keys [db/id hex/x hex/y hex/z hex/color]}
             (:map/hexes (d/pull @conn '[{:map/hexes [*]}] map-id))]
       (gl/draw-with-shader gl
@@ -130,7 +126,7 @@ void main() {
 
 (defn on-mouse-move [state e]
   ; XXX: flatten this structure
-  (let [{:keys [window-width
+  (let [{:keys [window-size
                 window-height
                 eye-pos
                 radius-px
@@ -141,8 +137,8 @@ void main() {
                 map-id]}
         @(:user-data state)
         ;; pan?
-        mouse-x-px (- (.-clientX e) (/ window-width 2))
-        mouse-y-px (- (.-clientY e) (/ window-height 2))
+        mouse-x-px (- (.-clientX e) (/ (:x window-size) 2))
+        mouse-y-px (- (.-clientY e) (/ (:y window-size) 2))
         mouse-x (- (/ mouse-x-px radius-px) (eye-pos 0))
         mouse-y (- (/ mouse-y-px radius-px) (eye-pos 1))
         [x y z] (hex/px->cube mouse-x mouse-y)
@@ -183,10 +179,10 @@ void main() {
 
 (defn on-wheel [state e]
   (swap! (:user-data state)
-         (fn [{:keys [window-width window-height radius-px eye-pos] :as old}]
-           (let [scale (+ 1 (* (.-deltaY e) wheel-scale-factor))
-                 mouse-x (+ (eye-pos 0) (/ (- (.-clientX e) (/ window-width 2)) radius-px))
-                 mouse-y (+ (eye-pos 1) (/ (- (.-clientY e) (/ window-height 2)) radius-px))]
+         (fn [{:keys [window-size radius-px eye-pos] :as old}]
+           (let [scale (- 1 (* (.-deltaY e) wheel-scale-factor))
+                 mouse-x (+ (eye-pos 0) (/ (- (.-clientX e) (/ (:x window-size) 2)) radius-px))
+                 mouse-y (+ (eye-pos 1) (/ (- (.-clientY e) (/ (:y window-size) 2)) radius-px))]
              (merge old
                     {:radius-px (* radius-px scale)
                      :eye-pos (vec2 (+ mouse-x (* (- (eye-pos 0) mouse-x) scale))
