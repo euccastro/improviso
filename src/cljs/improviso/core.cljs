@@ -128,12 +128,9 @@ void main() {
                 anchor
                 map-id]}
         @(:user-data state)
-        ;; pan?
-        mouse-x-px (- (.-clientX e) (/ (:x window-size) 2))
-        mouse-y-px (- (.-clientY e) (/ (:y window-size) 2))
-        mouse-x (- (/ mouse-x-px radius-px) (eye-pos 0))
-        mouse-y (- (/ mouse-y-px radius-px) (eye-pos 1))
-        [x y z] (hex/px->cube mouse-x mouse-y)
+        mouse-px (math/- (vec2 (.-clientX e) (.-clientY e)) (math/div window-size 2))
+        mouse-pos (math/- (math/div mouse-px radius-px) eye-pos)
+        [x y z] (hex/px->cube (:x mouse-pos) (:y mouse-pos))
         ;; XXX: remember last hex coords and only look for new one if not the same?
         hex (d/q '[:find ?c .
                    :in $ ?x ?y ?z
