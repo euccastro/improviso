@@ -125,8 +125,7 @@ void main() {
                 eye-pos
                 radius-px
                 eye0-pos
-                anchor-x
-                anchor-y
+                anchor
                 map-id]}
         @(:user-data state)
         ;; pan?
@@ -147,12 +146,14 @@ void main() {
            (fn [old]
              (cond-> old
                true (assoc :selected-hex hex)
-               anchor-x (merge
-                         {:eye-pos (vec2 (+ (:x eye0-pos) (/ (- (.-clientX e) anchor-x) radius-px))
-                                         (+ (:y eye0-pos) (/ (- (.-clientY e) anchor-y) radius-px)))}))))))
+               anchor (merge
+                       {:eye-pos (math/+ eye0-pos
+                                         (math/div (math/- (vec2 (.-clientX e) (.-clientY e))
+                                                           anchor)
+                                                   radius-px))}))))))
 
 (defn end-drag [state]
-  (swap! (:user-data state) dissoc :anchor-x :anchor-y :eye0-pos))
+  (swap! (:user-data state) dissoc :anchor :eye0-pos))
 
 (defn on-mouse-down [state e]
   (swap! (:user-data state)
@@ -160,8 +161,7 @@ void main() {
            (merge
             old
             {:eye0-pos (:eye-pos old)
-             :anchor-x (.-clientX e)
-             :anchor-y (.-clientY e)}))))
+             :anchor (vec2 (.-clientX e) (.-clientY e))}))))
 
 (defn on-mouse-up [state e]
   (end-drag state))
