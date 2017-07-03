@@ -173,12 +173,15 @@ void main() {
   (swap! (:user-data state)
          (fn [{:keys [window-size radius-px eye-pos] :as old}]
            (let [scale (- 1 (* (.-deltaY e) wheel-scale-factor))
-                 mouse-x (+ (eye-pos 0) (/ (- (.-clientX e) (/ (:x window-size) 2)) radius-px))
-                 mouse-y (+ (eye-pos 1) (/ (- (.-clientY e) (/ (:y window-size) 2)) radius-px))]
+                 mouse-pos (math/+ eye-pos
+                                   (math/div (math/- (vec2 (.-clientX e) (.-clientY e))
+                                                     (math/div window-size 2))
+                                             radius-px))]
              (merge old
                     {:radius-px (* radius-px scale)
-                     :eye-pos (vec2 (+ mouse-x (* (- (eye-pos 0) mouse-x) scale))
-                                    (+ mouse-y (* (- (eye-pos 1) mouse-y) scale)))})))))
+                     :eye-pos (math/+ mouse-pos
+                                      (math/* (math/- eye-pos mouse-pos)
+                                              scale))})))))
 
 (defn ^:export main []
   (enable-console-print!)
