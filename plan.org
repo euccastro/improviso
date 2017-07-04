@@ -15,6 +15,23 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
-** cleanup, XXXs
-*** embrace and standardize on thi.ng vectors
+** display some texture in the hexes
+*** questions
+**** raster? vector? svg?
+raster to begin with, since the others boil down to rendering into a texture,
+then using it.
+**** how to decide the rendering rectangle?
+manually specify four points in the hex
+***** how to fine tune this?                              :someday_maybe:
+it would be cool to have some worrydream into this.  generic manipulable graphic
+component that can be used to narrow in on exact values for stuff
+**** how to author the graphics?
+gimp
+**** how to load the graphics?
+see thi.ng tutorial
+* Someday/maybe
+** reify view state, use it to parameterize common operations?
+*** transformations between spaces
+*** operations under some space
+**** implicit transformations to and from this state
 ** gl context loss/recovery handler
