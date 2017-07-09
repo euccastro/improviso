@@ -16,6 +16,8 @@ longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
 ** display some texture in the hexes
+*** load a texture and pass it
+*** read up a bit on texture mapping in the superbible
 *** questions
 **** raster? vector? svg?
 raster to begin with, since the others boil down to rendering into a texture,

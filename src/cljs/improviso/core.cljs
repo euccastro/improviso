@@ -9,6 +9,7 @@
             [rum.core :as rum]
             [taoensso.sente :refer (cb-success?)]
             [thi.ng.geom.core :as geom]
+            [thi.ng.geom.gl.buffers :as buf]
             [thi.ng.geom.gl.core :as gl]
             [thi.ng.geom.gl.shaders :as shader]
             [thi.ng.geom.gl.shaders.basic :refer (make-shader-spec-2d)]
@@ -40,7 +41,7 @@
     (init-map conn-)
     conn-))
 
-(def line-shader
+(def line-shader-spec
   {:vs "
 void main() {
   gl_Position=txn*vec4(position, 0.0, 1.0);
@@ -52,6 +53,24 @@ void main() {
 "
    :uniforms {:txn [:mat4 M44]
               :color :vec4}
+   :attribs {:position :vec2}})
+
+(def rect-shader-spec
+  {:vs "
+void main() {
+  vUV = position;
+  gl_Position = txn*vec4(position, 0.0, 1.0);
+}"
+   :fs "
+void main() {
+  //gl_FragColor = vec4(vUV, 1.0 - (vUV.x + vUV.y) / 2.0, 1.0);
+  vec4 texcol = texture2D(tex, vUV);
+  gl_FragColor = texcol; // vec4(texcol.r, texcol.g, texcol.b, vUV.x);
+}
+"
+   :uniforms {:txn [:mat4 M44]
+              :tex :sampler2D}
+   :varying  {:vUV      :vec2}
    :attribs {:position :vec2}})
 
 (defn on-resize [state]
@@ -80,13 +99,31 @@ void main() {
                 selected-hex]}
         @(:user-data state)
         dom-node (rum/dom-node state)
-        gl (gl/gl-context dom-node)
-        shader (shader/make-shader-from-spec gl line-shader)
+        gl (gl/gl-context dom-node {:alpha false})
+        shader (shader/make-shader-from-spec gl line-shader-spec)
+        rect-shader (shader/make-shader-from-spec gl rect-shader-spec)
         model-txn (-> M44
                       (geom/translate (math/* window-size 0.5))
                       (math/* (geom/scale M44 (vec3 radius-px radius-px 1)))
                       (geom/translate eye-pos))
         wf hex/width-factor
+        rect-model (-> (rect/rect 0 0 1 1)
+                       (gl/as-gl-buffer-spec {})
+                       (gl/make-buffers-in-spec gl glc/static-draw)
+                       (assoc :shader rect-shader))
+        tex (or (.-tex gl)
+                (let [tex-ready (atom false)
+                      tex (buf/load-texture
+                           gl {:callback (fn [tex img]
+                                           (println "LOADED!!!")
+                                           (reset! tex-ready true))
+                               :src "img/wink.png"
+                               :type (.-UNSIGNED_BYTE gl)
+                               :format glc/rgba
+                               :flip false})]
+                  (set! (.-tex gl) tex)
+                  (set! (.-texReady gl) tex-ready)
+                  tex))
         model (-> (line/linestrip2 [0 1]
                                    [wf 0.5]
                                    [wf -0.5]
@@ -97,7 +134,12 @@ void main() {
                   (gl/as-gl-buffer-spec {})
                   (gl/make-buffers-in-spec gl glc/static-draw)
                   (assoc :shader shader))]
-    (gl/clear-color-and-depth-buffer gl 0.3 0.3 0.3 1 1)
+    (println "tex si" glc/rgba (.-RGBA gl))
+    ;; (.blendFunc gl (.-SRC_ALPHA gl) (.-ONE_MINUS_SRC_ALPHA gl))
+    (.enable gl (.-BLEND gl))
+    ;; gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
+    (.blendFunc gl (.-SRC_ALPHA gl) (.-ONE_MINUS_SRC_ALPHA gl))
+    (gl/clear-color-and-depth-buffer gl 0.3 0.3 0.3 1.0 1)
     (gl/set-viewport gl 0 0 (:x window-size) (:y window-size))
     (doseq [{:keys [db/id hex/x hex/y hex/z hex/color]}
             (:map/hexes (d/pull @conn '[{:map/hexes [*]}] map-id))]
@@ -116,7 +158,12 @@ void main() {
                                             (math/* hex/x-unit x)
                                             (math/+
                                              (math/* hex/y-unit y)
-                                             (math/* hex/z-unit z)))))))))))
+                                             (math/* hex/z-unit z))))))))
+      (when @(.-texReady gl)
+        (gl/draw-with-shader gl
+                             (-> rect-model
+                                 (assoc-in [:uniforms :tex] tex)
+                                 (assoc-in [:uniforms :txn] (math/* projection model-txn))))))))
 
 (defn on-mouse-move [state e]
   ; XXX: flatten this structure
