@@ -1,5 +1,5 @@
 (set-env!
- :source-paths #{"src/clj" "src/cljs"}
+ :source-paths #{"src/clj" "src/cljs" "src/java"}
  :resource-paths #{"res"}
  :dependencies '[[adzerk/boot-cljs "1.7.228-1" :scope "test"]
                  [adzerk/boot-cljs-repl "0.3.0" :scope "test"]
@@ -44,6 +44,7 @@
 
 (deftask dev []
   (comp (environ :env {:in-development "indeed"})
+     (javac)
      (serve :handler 'improviso.core/app
             :resource-root "target"
             :httpkit true
@@ -59,6 +60,7 @@
 
 (deftask build []
   (comp
+   (javac)
    (cljs :optimizations :advanced)
    (aot :namespace '#{improviso.core})
    (pom :project 'improviso

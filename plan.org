@@ -15,22 +15,12 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
-** display some texture in the hexes
-*** load a texture and pass it
-*** read up a bit on texture mapping in the superbible
-*** questions
-**** raster? vector? svg?
-raster to begin with, since the others boil down to rendering into a texture,
-then using it.
-**** how to decide the rendering rectangle?
-manually specify four points in the hex
-***** how to fine tune this?                              :someday_maybe:
-it would be cool to have some worrydream into this.  generic manipulable graphic
-component that can be used to narrow in on exact values for stuff
-**** how to author the graphics?
-gimp
-**** how to load the graphics?
-see thi.ng tutorial
+** make an endpoint to generate a random map
+*** needs be done server side because of OpenSimplexNoise.
+*** perhaps with some parameters?
+** extract map rendering functionality to *.cljc files?
+*** so we can make offline tools for authoring maps etc
+**** but why can't we make them web-based?
 * Someday/maybe
 ** reify view state, use it to parameterize common operations?
 *** transformations between spaces
