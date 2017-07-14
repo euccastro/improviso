@@ -70,17 +70,22 @@ vec3 px2cube(in vec2 v) {
 void main() {
   vec4 pos4 = invtxn * vec4(pos, 0.0, 1.0);
   vec3 cube = px2cube(pos4.xy);
-  //gl_FragColor = vec4(posflipped, 0.0, 1.0);
   if (cube == selectedhex) {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
-    gl_FragColor = vec4(cube / 10.0, 1.0);
+//    gl_FragColor = vec4(cube, 1.0);
+    float diameter = float(mapradius) * 2.0 + 1.0;
+    float u = (0.5 + cube.x + mapradius) / diameter;
+    float v = (0.5 + cube.z + mapradius) / diameter;
+    gl_FragColor = texture2D(maptex, vec2(u, v));
   }
 }
 "
    :uniforms {:color :vec4
               :invtxn [:mat4 M44]
               ;; defaults to impossible coords; don't add to 0
+              :mapradius :float
+              :maptex :sampler2D
               :selectedhex [:vec3 (vec3 -1 -1 -1)]}
    :varying {:pos :vec2}
    :attribs {:position :vec2}})
@@ -89,11 +94,12 @@ void main() {
   (let [w (.-innerWidth js/window)
         h (.-innerHeight js/window)
         proj (gl/ortho 0 0 w h -1 1)
-        map-id (d/q '[:find ?m . :where [?m :map/cols]] @conn)
+        map-id (d/q '[:find ?m . :where [?m :map/radius]] @conn)
         map-ent (d/entity @conn map-id)
-        hradii (hex/map-width (:map/cols map-ent))
-        vradii (hex/map-height (:map/rows map-ent))
-        radius (/ (min (/ w hradii) (/ h vradii)) 2)] ; XXX / 2
+        map-diameter (+ 1 (* 2 (:map/radius map-ent)))
+        hradii (hex/map-width map-diameter)
+        vradii (hex/map-height map-diameter)
+        radius (min (/ w hradii) (/ h vradii))]
     (swap! (:user-data state)
            #(merge {:eye-pos (vec2 0 0)}
                    %
@@ -101,6 +107,31 @@ void main() {
                     :projection proj
                     :radius-px radius
                     :map-id map-id}))))
+
+(defn array-index [radius x z]
+  (let [diameter (+ 1 (* 2 radius))]
+    (* 4
+       (+ (* diameter (+ z radius))
+          x
+          radius))))
+
+(defn make-tex-array [{:keys [map/radius map/hexes] :as m}]
+  (let [diameter (+ 1  ; center hex
+                    (* 2 radius))
+        length (* diameter diameter 4)  ; RGBA
+        array (js/Uint8Array. length)]
+    (.fill array 0)
+    (doseq [{:keys [hex/x hex/z hex/color]} hexes
+            :let [index (array-index radius x z)]
+            [i v] (map-indexed vector color)]
+      (aset array (+ index i) (Math/floor (* v 255))))
+    (println "array:")
+    (let [v (reduce (fn [v i] (conj v (aget array i)))
+                    []
+                    (range length))]
+      (doseq [row (partition (* 4 diameter) v)]
+        (println (into [] (partition 4 row)))))
+    array))
 
 (defn draw [state]
   (let [{:keys [window-size
@@ -121,6 +152,21 @@ void main() {
                     (geom/translate (math/- eye-pos))
                     (math/* (geom/scale M44 (vec3 inv-radius-px inv-radius-px 1)))
                     (geom/translate (math/- (math/* window-size 0.5))))
+        [map-radius tex] (or (.-tex gl)
+                             (let [{:keys [map/radius] :as mapm}
+                                   (d/pull @conn '[:map/radius {:map/hexes [*]}] map-id)
+                                   diameter (+ 1 (* 2 radius))
+                                   opts {:width diameter
+                                         :height diameter
+                                         :format glc/rgba
+                                         :filter [glc/nearest glc/nearest]
+                                         :wrap [glc/clamp-to-edge glc/clamp-to-edge]
+                               ;          :type glc/float
+                                         :pixels (make-tex-array mapm)}
+                                   t (buf/make-texture gl opts)
+                                   ret [radius t]]
+                               (set! (.-tex gl) ret)
+                               ret))
         shader (shader/make-shader-from-spec gl line-shader-spec)
         model (-> (rect/rect (math/- (math/div window-size 2)) window-size)
                   (gl/as-gl-buffer-spec {})
@@ -134,6 +180,8 @@ void main() {
                          (cond-> model
                              true (assoc-in [:uniforms :invtxn] (math/* inv-txn (math/invert projection)))
                              true (assoc-in [:uniforms :color] [1 0 0 1])
+                             true (assoc-in [:uniforms :mapradius] map-radius)
+                             true (assoc-in [:uniforms :maptex] tex)
                              selected-hex (assoc-in [:uniforms :selectedhex] selected-hex)))))
 
 (defn on-mouse-move [state e]
@@ -157,6 +205,7 @@ void main() {
                    [?c :hex/y ?y]
                    [?c :hex/z ?z]]
                  @conn x y z)]
+    (println "selected hex" x y z)
     (swap! (:user-data state)
            (fn [old]
              (cond-> old
@@ -202,7 +251,6 @@ void main() {
   (sente/send! [:terrain/make-map]
                10000
                (fn [result]
-                 (println "got result!" result)
                  (if-not (cb-success? result)
                    (js/alert (str "Problem fetching initial map: " (pr-str result)))
                    (do
