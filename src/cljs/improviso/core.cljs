@@ -68,13 +68,14 @@ vec3 px2cube(in vec2 v) {
 }
 
 void main() {
-  vec3 cube = px2cube(pos * 5.0);
+  vec4 pos4 = vec4(pos, 0.0, 1.0);
+  vec3 cube = px2cube((invtxn * pos4).xy);
+  //vec3 cube = px2cube(pos - vec2(eye.x, -eye.y));
   gl_FragColor = vec4(cube, 1.0);
 }
 "
    :uniforms {:color :vec4
-              :hexradiuspx :float
-              :eye :vec2}
+              :invtxn [:mat4 M44]}
    :varying {:pos :vec2}
    :attribs {:position :vec2}})
 
@@ -123,6 +124,15 @@ void main() {
         @(:user-data state)
         dom-node (rum/dom-node state)
         gl (gl/gl-context dom-node {:alpha false})
+        txn (-> M44
+                (geom/translate (math/* window-size 0.5))
+                (math/* (geom/scale M44 (vec3 radius-px radius-px 1)))
+                (geom/translate eye-pos))
+        inv-radius-px (/ 1 radius-px)
+        inv-txn (-> M44
+                    (geom/translate (math/- eye-pos))
+                    (math/* (geom/scale M44 (vec3 inv-radius-px inv-radius-px 1)))
+                    (geom/translate (math/- (math/* window-size 0.5))))
         shader (shader/make-shader-from-spec gl line-shader-spec)
         model (-> (rect/rect (math/- (math/div window-size 2)) window-size)
                   (gl/as-gl-buffer-spec {})
@@ -134,8 +144,8 @@ void main() {
     (gl/set-viewport gl 0 0 (:x window-size) (:y window-size))
     (gl/draw-with-shader gl
                          (-> model
-                             (assoc-in [:uniforms :color]
-                                       [1 0 0 1])))))
+                             (assoc-in [:uniforms :invtxn] (math/* inv-txn (math/invert projection)))
+                             (assoc-in [:uniforms :color] [1 0 0 1])))))
 
 (defn on-mouse-move [state e]
   ; XXX: flatten this structure
