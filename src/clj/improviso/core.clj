@@ -5,6 +5,7 @@
   (:require [compojure.core :refer (defroutes GET POST)]
             [compojure.route :refer (files not-found resources)]
             [improviso.sente :as sente]
+            [improviso.terrain :as terrain]
             [improviso.util :as util]
             [ring.middleware.defaults :refer (wrap-defaults site-defaults)]
             [rum.core :as rum]))
@@ -20,6 +21,10 @@
              "Wonderful things would happen here if you had Javascript enabled..."]]
            [:script {:type "text/javascript" :src "js/main.js"}]
            [:script {:type "text/javascript"} "improviso.core.main();"]])})
+
+(defmethod sente/client-msg-handler :terrain/make-map
+  [{:keys [?data ?reply-fn]}]
+  (when ?reply-fn (?reply-fn (terrain/make-map))))
 
 (defroutes handler
   (GET "/" req (root req))

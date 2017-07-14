@@ -24,22 +24,13 @@
 
 (enable-console-print!)
 
-(defn init-map [conn]
-  (d/transact! conn
-               [{:db/id -1
-                 :map/cols 2
-                 :map/rows 2
-                 :map/hexes [{:hex/x 0 :hex/y 0 :hex/z 0 :hex/color [1.0 0.0 0.0 1.0]}
-                             {:hex/x 1 :hex/y -1 :hex/z 0 :hex/color [0.0 1.0 0.0 1.0]}
-                             {:hex/x 1 :hex/y 0 :hex/z -1 :hex/color [0.0 0.0 1.0 1.0]}
-                             {:hex/x 2 :hex/y -1 :hex/z -1 :hex/color [1.0 1.0 0.0 1.0]}]}]))
+(defn init-map [conn map]
+  (d/transact! conn [(merge {:db/id -1} map)]))
 
 (defonce conn
-  (let [conn- (d/create-conn {:map/hexes {:db/cardinality :db.cardinality/many
-                                          :db/valueType :db.type/ref
-                                          :db/isComponent true}})]
-    (init-map conn-)
-    conn-))
+  (d/create-conn {:map/hexes {:db/cardinality :db.cardinality/many
+                              :db/valueType :db.type/ref
+                              :db/isComponent true}}))
 
 (def line-shader-spec
   {:vs "
@@ -227,14 +218,28 @@ void main() {
                                       (math/* (math/- eye-pos mouse-pos)
                                               scale))})))))
 
+(defn when-ready []
+  (sente/send! [:terrain/make-map]
+               10000
+               (fn [result]
+                 (println "got result!" result)
+                 (if-not (cb-success? result)
+                   (js/alert (str "Problem fetching initial map: " (pr-str result)))
+                   (do
+                     (init-map conn result)
+                     (rum/mount (canvas {:after-render (fn [& args] (apply draw args))
+                                         :on-mouse-down (fn [& args] (apply on-mouse-down args))
+                                         :on-mouse-up (fn [& args] (apply on-mouse-up args))
+                                         :on-mouse-leave (fn [& args] (apply on-mouse-leave args))
+                                         :on-mouse-move (fn [& args] (apply on-mouse-move args))
+                                         :on-resize (fn [& args] (apply on-resize args))
+                                         :on-wheel (fn [& args] (apply on-wheel args))})
+                                (js/document.getElementById "app_container")))))))
+
+(defmethod sente/server-msg-handler :chsk/state
+  [{[_ [_ {:keys [first-open?]}]] :event}]
+  (when first-open? (when-ready)))
+
 (defn ^:export main []
   (enable-console-print!)
-  (sente/start-once!)
-  (rum/mount (canvas {:after-render (fn [& args] (apply draw args))
-                      :on-mouse-down (fn [& args] (apply on-mouse-down args))
-                      :on-mouse-up (fn [& args] (apply on-mouse-up args))
-                      :on-mouse-leave (fn [& args] (apply on-mouse-leave args))
-                      :on-mouse-move (fn [& args] (apply on-mouse-move args))
-                      :on-resize (fn [& args] (apply on-resize args))
-                      :on-wheel (fn [& args] (apply on-wheel args))})
-             (js/document.getElementById "app_container")))
+  (sente/start-once!))
