@@ -18,7 +18,7 @@ wraparound
 ** make an endpoint to generate a random map
 *** serve a 64x64 map at least
 **** bad performance; render as a single polygon, in shader
-***** primeira prova: renderizar o rectângulo com cor uniforme (vermelha, digamos)
+***** fazer a cor dependente, digamos, de x e y
 ***** primeiro, obter um rectângulo cos límites a renderizar
 ****** toda a tela? venha
 ***** varying: x, y (dados)

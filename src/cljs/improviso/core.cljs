@@ -38,14 +38,16 @@
   {:vs "
 void main() {
   gl_Position=txn*vec4(position, 0.0, 1.0);
+  pos = position.xy;
 }"
    :fs "
 void main() {
-  gl_FragColor=color;
+  gl_FragColor = vec4(pos.x, pos.y, 1.0 - max(pos.x, pos.y), 1.0);
 }
 "
    :uniforms {:txn [:mat4 M44]
               :color :vec4}
+   :varying {:pos :vec2}
    :attribs {:position :vec2}})
 
 (def rect-shader-spec
