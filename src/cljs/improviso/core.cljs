@@ -37,16 +37,22 @@
 (def line-shader-spec
   {:vs "
 void main() {
-  gl_Position=txn*vec4(position, 0.0, 1.0);
+  gl_Position=vec4(position, 0.0, 1.0);
   pos = position.xy;
 }"
    :fs "
+float round(in float x) {
+  return floor(x + 0.5);
+}
+
 void main() {
-  gl_FragColor = vec4(pos.x, pos.y, 1.0 - max(pos.x, pos.y), 1.0);
+  float x = round((pos.y + 1.0) / 2.0);
+  gl_FragColor = vec4(round((pos.x + 1.0) / 2.0), x, 0.0, 1.0);
 }
 "
-   :uniforms {:txn [:mat4 M44]
-              :color :vec4}
+   :uniforms {:color :vec4
+              :hexradiuspx :float
+              :eye :vec2}
    :varying {:pos :vec2}
    :attribs {:position :vec2}})
 
