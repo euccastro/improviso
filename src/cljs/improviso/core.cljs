@@ -45,9 +45,31 @@ float round(in float x) {
   return floor(x + 0.5);
 }
 
+vec3 vround(in vec3 v) {
+  return floor(v + 0.5);
+}
+
+vec3 cube_round(in vec3 v) {
+  vec3 r = vround(v);
+  vec3 d = abs(v - r);
+  if (d.y < d.x && d.z < d.x) {
+    return vec3(-r.y-r.z, r.y, r.z);
+  }
+  if (d.x < d.y && d.z < d.y) {
+    return vec3(r.x, -r.x-r.z, r.z);
+  }
+  return vec3(r.x, r.y, -r.x-r.y);
+}
+
+vec3 px2cube(in vec2 v) {
+  float x = (v.x * 1.7320508075688772 - v.y) / 3.0;
+  float y = v.y * 0.6666666666666666;
+  return cube_round(vec3(x, y, -x-y));
+}
+
 void main() {
-  float x = round((pos.y + 1.0) / 2.0);
-  gl_FragColor = vec4(round((pos.x + 1.0) / 2.0), x, 0.0, 1.0);
+  vec3 cube = px2cube(pos * 5.0);
+  gl_FragColor = vec4(cube, 1.0);
 }
 "
    :uniforms {:color :vec4
@@ -113,9 +135,7 @@ void main() {
     (gl/draw-with-shader gl
                          (-> model
                              (assoc-in [:uniforms :color]
-                                       [1 0 0 1])
-                             (assoc-in [:uniforms :txn]
-                                       M44)))))
+                                       [1 0 0 1])))))
 
 (defn on-mouse-move [state e]
   ; XXX: flatten this structure
