@@ -63,38 +63,26 @@ vec3 cube_round(in vec3 v) {
 
 vec3 px2cube(in vec2 v) {
   float x = (v.x * 1.7320508075688772 - v.y) / 3.0;
-  float y = v.y * 0.6666666666666666;
-  return cube_round(vec3(x, y, -x-y));
+  float z = v.y * 0.6666666666666666;
+  return cube_round(vec3(x, -x-z, z));
 }
 
 void main() {
-  vec4 pos4 = vec4(pos, 0.0, 1.0);
-  vec3 cube = px2cube((invtxn * pos4).xy);
-  //vec3 cube = px2cube(pos - vec2(eye.x, -eye.y));
-  gl_FragColor = vec4(cube, 1.0);
+  vec4 pos4 = invtxn * vec4(pos, 0.0, 1.0);
+  vec3 cube = px2cube(pos4.xy);
+  //gl_FragColor = vec4(posflipped, 0.0, 1.0);
+  if (cube == selectedhex) {
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+  } else {
+    gl_FragColor = vec4(cube / 10.0, 1.0);
+  }
 }
 "
    :uniforms {:color :vec4
-              :invtxn [:mat4 M44]}
+              :invtxn [:mat4 M44]
+              ;; defaults to impossible coords; don't add to 0
+              :selectedhex [:vec3 (vec3 -1 -1 -1)]}
    :varying {:pos :vec2}
-   :attribs {:position :vec2}})
-
-(def rect-shader-spec
-  {:vs "
-void main() {
-  vUV = position;
-  gl_Position = txn*vec4(position, 0.0, 1.0);
-}"
-   :fs "
-void main() {
-  //gl_FragColor = vec4(vUV, 1.0 - (vUV.x + vUV.y) / 2.0, 1.0);
-  vec4 texcol = texture2D(tex, vUV);
-  gl_FragColor = texcol; // vec4(texcol.r, texcol.g, texcol.b, vUV.x);
-}
-"
-   :uniforms {:txn [:mat4 M44]
-              :tex :sampler2D}
-   :varying  {:vUV      :vec2}
    :attribs {:position :vec2}})
 
 (defn on-resize [state]
@@ -143,9 +131,10 @@ void main() {
     (gl/clear-color-and-depth-buffer gl 0.3 0.3 0.3 1.0 1)
     (gl/set-viewport gl 0 0 (:x window-size) (:y window-size))
     (gl/draw-with-shader gl
-                         (-> model
-                             (assoc-in [:uniforms :invtxn] (math/* inv-txn (math/invert projection)))
-                             (assoc-in [:uniforms :color] [1 0 0 1])))))
+                         (cond-> model
+                             true (assoc-in [:uniforms :invtxn] (math/* inv-txn (math/invert projection)))
+                             true (assoc-in [:uniforms :color] [1 0 0 1])
+                             selected-hex (assoc-in [:uniforms :selectedhex] selected-hex)))))
 
 (defn on-mouse-move [state e]
   ; XXX: flatten this structure
@@ -171,7 +160,7 @@ void main() {
     (swap! (:user-data state)
            (fn [old]
              (cond-> old
-               true (assoc :selected-hex hex)
+               true (assoc :selected-hex (vec3 x y z))
                anchor (merge
                        {:eye-pos (math/+ eye0-pos
                                          (math/div (math/- (vec2 (.-clientX e) (.-clientY e))
