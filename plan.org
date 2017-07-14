@@ -17,7 +17,19 @@ wraparound
 * Next Actions
 ** make an endpoint to generate a random map
 *** serve a 64x64 map at least
-**** try rendering hexagons as points to see whether that's what breaks everything
+**** bad performance; render as a single polygon, in shader
+***** primeira prova: renderizar o rectângulo com cor uniforme (vermelha, digamos)
+***** primeiro, obter um rectângulo cos límites a renderizar
+****** toda a tela? venha
+***** varying: x, y (dados)
+***** textura com cores nas coordenadas
+****** funçom x, y(, z?) -> índice na textura
+***** funçom (px, py) -> (x, y(, z?)) do hex 
+cópia da que tenho em hex.cljs
+***** uniforms
+****** map-radius
+****** hex-radius-px
+****** eye (vec2)
 *** needs be done server side because of OpenSimplexNoise.
 *** perhaps with some parameters?
 ** extract map rendering functionality to *.cljc files?
