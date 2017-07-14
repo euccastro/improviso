@@ -17,6 +17,7 @@ wraparound
 * Next Actions
 ** make an endpoint to generate a random map
 *** serve a 64x64 map at least
+**** try rendering hexagons as points to see whether that's what breaks everything
 *** needs be done server side because of OpenSimplexNoise.
 *** perhaps with some parameters?
 ** extract map rendering functionality to *.cljc files?
