@@ -16,7 +16,8 @@ longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
 ** make an endpoint to generate a random map
-*** first step: make an endpoint that returns the current map
+*** to view the map better, make background solid
+**** hence, polygon instead of linestrip
 *** needs be done server side because of OpenSimplexNoise.
 *** perhaps with some parameters?
 ** extract map rendering functionality to *.cljc files?

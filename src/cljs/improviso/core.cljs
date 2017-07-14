@@ -2,6 +2,7 @@
   (:require-macros
    [cljs.core.async.macros :as asyncm :refer (go go-loop)])
   (:require [cljs.core.async :as async :refer (<! >! put! chan)]
+            [cljs.pprint :refer (pprint)]
             [datascript.core :as d]
             [improviso.gl :refer (canvas)]
             [improviso.hex :as hex]
@@ -16,6 +17,7 @@
             [thi.ng.geom.gl.webgl.constants :as glc]
             [thi.ng.geom.line :as line]
             [thi.ng.geom.matrix :as mat :refer (M44)]
+            [thi.ng.geom.polygon :as poly]
             [thi.ng.geom.rect :as rect]
             [thi.ng.geom.vector :as vec :refer (vec2 vec3)]
             [thi.ng.math.core :as math]))
@@ -115,20 +117,16 @@ void main() {
                   (set! (.-tex gl) tex)
                   (set! (.-texReady gl) tex-ready)
                   tex))
-        model (-> (line/linestrip2 [0 1]
-                                   [wf 0.5]
-                                   [wf -0.5]
-                                   [0 -1]
-                                   [(- wf) -0.5]
-                                   [(- wf) 0.5]
-                                   [0 1])
-                  (gl/as-gl-buffer-spec {})
+        model (-> (poly/polygon2 [0 1]
+                                 [wf 0.5]
+                                 [wf -0.5]
+                                 [0 -1]
+                                 [(- wf) -0.5]
+                                 [(- wf) 0.5])
+                  (gl/as-gl-buffer-spec {:normals false})
                   (gl/make-buffers-in-spec gl glc/static-draw)
                   (assoc :shader shader))]
-    (println "tex si" glc/rgba (.-RGBA gl))
-    ;; (.blendFunc gl (.-SRC_ALPHA gl) (.-ONE_MINUS_SRC_ALPHA gl))
     (.enable gl (.-BLEND gl))
-    ;; gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
     (.blendFunc gl (.-SRC_ALPHA gl) (.-ONE_MINUS_SRC_ALPHA gl))
     (gl/clear-color-and-depth-buffer gl 0.3 0.3 0.3 1.0 1)
     (gl/set-viewport gl 0 0 (:x window-size) (:y window-size))
