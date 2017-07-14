@@ -74,9 +74,9 @@ void main() {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
 //    gl_FragColor = vec4(cube, 1.0);
-    float diameter = float(mapradius) * 2.0 + 1.0;
-    float u = (0.5 + cube.x + mapradius) / diameter;
-    float v = (0.5 + cube.z + mapradius) / diameter;
+    float diameter = float(mapradius) * 2.0 + 3.0;
+    float u = (1.5 + cube.x + mapradius) / diameter;
+    float v = (1.5 + cube.z + mapradius) / diameter;
     gl_FragColor = texture2D(maptex, vec2(u, v));
   }
 }
@@ -108,21 +108,19 @@ void main() {
                     :radius-px radius
                     :map-id map-id}))))
 
-(defn array-index [radius x z]
-  (let [diameter (+ 1 (* 2 radius))]
-    (* 4
-       (+ (* diameter (+ z radius))
-          x
-          radius))))
-
 (defn make-tex-array [{:keys [map/radius map/hexes] :as m}]
   (let [diameter (+ 1  ; center hex
+                    2  ; borders
                     (* 2 radius))
         length (* diameter diameter 4)  ; RGBA
         array (js/Uint8Array. length)]
     (.fill array 0)
     (doseq [{:keys [hex/x hex/z hex/color]} hexes
-            :let [index (array-index radius x z)]
+            :let [index (* 4
+                           (+ (* diameter (+ 1 z radius)) ; 1 for v margin
+                              1  ; for h margin
+                              x
+                              radius))]
             [i v] (map-indexed vector color)]
       (aset array (+ index i) (Math/floor (* v 255))))
     (println "array:")
@@ -155,7 +153,7 @@ void main() {
         [map-radius tex] (or (.-tex gl)
                              (let [{:keys [map/radius] :as mapm}
                                    (d/pull @conn '[:map/radius {:map/hexes [*]}] map-id)
-                                   diameter (+ 1 (* 2 radius))
+                                   diameter (+ 1 2 (* 2 radius))  ; 2 for margins
                                    opts {:width diameter
                                          :height diameter
                                          :format glc/rgba

@@ -8,7 +8,7 @@
   (let [osn (OpenSimplexNoise.)]
     (println "OSN" (* rescale-factor (.eval osn 1.0 1.0)))))
 
-(def map-radius 3)
+(def map-radius 16)
 
 (defn coord->color [coord]
   (/ (+ coord map-radius)
