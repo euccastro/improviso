@@ -123,12 +123,6 @@ void main() {
                               radius))]
             [i v] (map-indexed vector color)]
       (aset array (+ index i) (Math/floor (* v 255))))
-    (println "array:")
-    (let [v (reduce (fn [v i] (conj v (aget array i)))
-                    []
-                    (range length))]
-      (doseq [row (partition (* 4 diameter) v)]
-        (println (into [] (partition 4 row)))))
     array))
 
 (defn draw [state]
@@ -152,7 +146,7 @@ void main() {
                     (geom/translate (math/- (math/* window-size 0.5))))
         [map-radius tex] (or (.-tex gl)
                              (let [{:keys [map/radius] :as mapm}
-                                   (d/pull @conn '[:map/radius {:map/hexes [*]}] map-id)
+                                   (d/pull @conn '[:map/radius {(limit :map/hexes nil) [*]}] map-id)
                                    diameter (+ 1 2 (* 2 radius))  ; 2 for margins
                                    opts {:width diameter
                                          :height diameter
