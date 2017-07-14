@@ -7,10 +7,26 @@
   (let [osn (OpenSimplexNoise.)]
     (println "OSN" (* rescale-factor (.eval osn 1.0 1.0)))))
 
+(def map-radius 17)
+
+(defn coord->color [coord]
+  (/ (+ coord map-radius)
+     (* 2 map-radius)))
+
 (defn make-map []
-  {:map/cols 2
-   :map/rows 2
-   :map/hexes [{:hex/x 0 :hex/y 0 :hex/z 0 :hex/color [1.0 0.0 0.0 1.0]}
-               {:hex/x 1 :hex/y -1 :hex/z 0 :hex/color [0.0 1.0 0.0 1.0]}
-               {:hex/x 1 :hex/y 0 :hex/z -1 :hex/color [0.0 0.0 1.0 1.0]}
-               {:hex/x 2 :hex/y -1 :hex/z -1 :hex/color [1.0 0.0 1.0 1.0]}]})
+  {:map/cols map-radius
+   :map/rows map-radius
+   :map/hexes (into []
+                    (for [x (range (- map-radius) (+ 1 map-radius))
+                          y (range (max (- map-radius) (- (+ x map-radius)))
+                                   (+ 1 (min map-radius (- map-radius x))))
+                          :let [z (- (+ x y))]]
+                      {:hex/x x :hex/y y :hex/z z :hex/color [(coord->color x)
+                                                              (coord->color y)
+                                                              (coord->color z)
+                                                              1.0]}))})
+
+(comment [{:hex/x 0 :hex/y 0 :hex/z 0 :hex/color [1.0 0.0 0.0 1.0]}
+          {:hex/x 1 :hex/y -1 :hex/z 0 :hex/color [0.0 1.0 0.0 1.0]}
+          {:hex/x 1 :hex/y 0 :hex/z -1 :hex/color [0.0 0.0 1.0 1.0]}
+          {:hex/x 2 :hex/y -1 :hex/z -1 :hex/color [1.0 0.0 1.0 1.0]}])
