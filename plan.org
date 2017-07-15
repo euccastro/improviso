@@ -15,26 +15,9 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
+** warp affects borders more; fix
 ** make an endpoint to generate a random map
-*** serve a 64x64 map at least
-**** bad performance; render as a single polygon, in shader
-***** debujar um hexágono simples
-***** primeiro, obter um rectângulo cos límites a renderizar
-****** toda a tela? venha
-***** varying: x, y (dados)
-***** textura com cores nas coordenadas
-****** funçom x, y(, z?) -> índice na textura
-***** funçom (px, py) -> (x, y(, z?)) do hex 
-cópia da que tenho em hex.cljs
-***** uniforms
-****** map-radius
-****** hex-radius-px
-****** eye (vec2)
-*** needs be done server side because of OpenSimplexNoise.
-*** perhaps with some parameters?
-** extract map rendering functionality to *.cljc files?
-*** so we can make offline tools for authoring maps etc
-**** but why can't we make them web-based?
+*** play with an entry which controls the weight of each part
 * Someday/maybe
 ** reify view state, use it to parameterize common operations?
 *** transformations between spaces
