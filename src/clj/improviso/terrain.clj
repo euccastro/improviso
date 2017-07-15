@@ -7,7 +7,7 @@
 
 (def rescale-factor 1.1548607)
 
-(def map-radius 128)
+(def map-radius 64)
 
 (defn sample [osn scale v]
   (let [[x y] (math/* v scale)]
@@ -21,19 +21,19 @@
 
 (defn coords->color [osn v]
   (let [v (math/div (hex/cube->xy v) 4.0)
-        warp-x (samples osn (math/+ v (vec2 120.0 240.0)) [0.0078125 0.015625 0.03125 0.125 0.25])
-        warp-y (samples osn (math/+ v (vec2 240.0 120.0)) [0.0078125 0.015625 0.03125 0.125 0.25])
+        warp-x (samples osn (math/+ v (vec2 120.0 240.0)) [0.0078125 0.015625 0.03125 0.125 0.5])
+        warp-y (samples osn (math/+ v (vec2 240.0 120.0)) [0.0078125 0.015625 0.03125 0.125 0.5])
         n (samples osn
-                   (vec2 (+ (:x v) (* warp-x 10.0))
-                         (+ (:y v) (* warp-y 10.0)))
-                   [0.125 0.25 0.25 0.5])
+                   (vec2 (+ (:x v) (* warp-x 12.0))
+                         (+ (:y v) (* warp-y 12.0)))
+                   [0.25 0.25 0.5])
         c (/ (+ n 1.0) 2.0)]
-    (if (< c 0.65)
+    (if (< c 0.7)
       [0.0 c 1.0 1.0]
       [1.0 c 0.0 1.0])))
 
 (defn make-map []
-  (let [osn (OpenSimplexNoise. 11)]
+  (let [osn (OpenSimplexNoise. 66)]
     {:map/radius map-radius
      :map/hexes (into []
                       (for [x (range (- map-radius) (+ 1 map-radius))

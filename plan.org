@@ -15,9 +15,11 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
-** warp affects borders more; fix
-** make an endpoint to generate a random map
-*** play with an entry which controls the weight of each part
+** noisify lacunarity/weight of different octaves
+*** in main sampling
+*** in warping?
+** noisify warping "radius"
+** wraparound
 * Someday/maybe
 ** reify view state, use it to parameterize common operations?
 *** transformations between spaces
