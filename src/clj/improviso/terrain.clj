@@ -7,7 +7,7 @@
 
 (def rescale-factor 1.1548607)
 
-(def map-radius 256)
+(def map-radius 128)
 
 (defn sample [osn scale v]
   (let [[x y] (math/* v scale)]
@@ -24,8 +24,8 @@
         warp-x (samples osn (math/+ v (vec2 120.0 240.0)) [0.0078125 0.015625 0.03125 0.125 0.25])
         warp-y (samples osn (math/+ v (vec2 240.0 120.0)) [0.0078125 0.015625 0.03125 0.125 0.25])
         n (samples osn
-                   (vec2 (* (:x v) (+ 1.0 (* warp-x 0.75)))
-                         (* (:y v) (+ 1.0 (* warp-y 0.75))))
+                   (vec2 (+ (:x v) (* warp-x 10.0))
+                         (+ (:y v) (* warp-y 10.0)))
                    [0.125 0.25 0.25 0.5])
         c (/ (+ n 1.0) 2.0)]
     (if (< c 0.65)
