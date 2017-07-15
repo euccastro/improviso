@@ -1,26 +1,22 @@
 (ns improviso.hex
-  (:require [thi.ng.geom.vector :as vec :refer (vec3)]
+  (:require [thi.ng.geom.vector :as vec :refer (vec2 vec3)]
             [thi.ng.math.core :as math]))
-
-;; XXX: reader conditional in cljc.
-(defn sqrt [x]
-  (Math/sqrt x))
 
 ;; in radii, assuming rows > 0
 (defn map-height [rows]
   (+ 2 (* rows (/ 2 3))))
 
-(def width-factor (/ (sqrt 3) 2))
+(def width-factor (/ (Math/sqrt 3) 2))
 
 ;; in radii, assuming rows > 1 and columns > 0
 (defn map-width [columns]
   (* width-factor (+ 1 (* 2 columns))))
 
-(def x-unit (vec3 width-factor -0.5 0))
+(def x-unit (vec2 width-factor -0.5))
 
-(def y-unit (vec3 (- width-factor) -0.5 0))
+(def y-unit (vec2 (- width-factor) -0.5))
 
-(def z-unit (vec3 0 1 0))
+(def z-unit (vec2 0.0 1.0))
 
 (defn cube-round [x y z]
   ;; http://www.redblobgames.com/grids/hexagons/#rounding
@@ -34,7 +30,7 @@
           (and (< dx dy) (< dz dy)) [rx (- (+ rx rz)) rz]
           :else [rx ry (- (+ rx ry))])))
 
-(def sqrt-3-over-3 (/ (sqrt 3) 3))
+(def sqrt-3-over-3 (/ (Math/sqrt 3) 3))
 (def two-thirds (/ 2 3))
 
 (defn px->cube
@@ -45,3 +41,8 @@
         z (* py two-thirds)
         y (- (+ x z))]
     (cube-round x y z)))
+
+(defn cube->xy
+  [[x y z]]
+  (math/+ (math/* x-unit x) (math/* y-unit y) (math/* z-unit z)))
+
