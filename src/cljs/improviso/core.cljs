@@ -61,6 +61,26 @@ vec3 cube_round(in vec3 v) {
   return vec3(r.x, r.y, -r.x-r.y);
 }
 
+float cube_length(in vec3 v) {
+  return (abs(v.x) + abs(v.y) + abs(v.z)) / 2.0;
+}
+vec3 cube_wrap(in vec3 v) {
+  if (cube_length(v) <= mapradius) {
+    return v;
+  }
+  vec3 other = vec3(mapradius * 2.0 + 1.0,
+                    -mapradius,
+                    -mapradius - 1.0);
+  for (int i=0; i<6; i++) {
+     vec3 dv = v - other;
+     if (cube_length(dv) <= mapradius) {
+       return dv;
+     }
+     other = vec3(-other.y, -other.z, -other.x);
+  }
+  return v;
+}
+
 vec3 px2cube(in vec2 v) {
   float x = (v.x * 1.7320508075688772 - v.y) / 3.0;
   float z = v.y * 0.6666666666666666;
@@ -69,7 +89,7 @@ vec3 px2cube(in vec2 v) {
 
 void main() {
   vec4 pos4 = invtxn * vec4(pos, 0.0, 1.0);
-  vec3 cube = px2cube(pos4.xy);
+  vec3 cube = cube_wrap(px2cube(pos4.xy));
   if (cube == selectedhex) {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
