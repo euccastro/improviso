@@ -20,9 +20,13 @@ wraparound
 *** in warping?
 ** noisify warping "radius"
 ** wraparound
+*** wrap on zoom
+*** wrap selection
+*** terrain: smoothstep across different mirror-centers
 * Someday/maybe
 ** reify view state, use it to parameterize common operations?
 *** transformations between spaces
 *** operations under some space
 **** implicit transformations to and from this state
 ** gl context loss/recovery handler
+** swap in other (Perlin?) noise implementations
