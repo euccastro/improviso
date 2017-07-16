@@ -64,6 +64,7 @@ vec3 cube_round(in vec3 v) {
 float cube_length(in vec3 v) {
   return (abs(v.x) + abs(v.y) + abs(v.z)) / 2.0;
 }
+
 vec3 cube_wrap(in vec3 v) {
   if (cube_length(v) <= mapradius) {
     return v;
