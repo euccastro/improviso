@@ -18,7 +18,7 @@
 
 (def z-unit (vec2 0.0 1.0))
 
-(defn cube-round [x y z]
+(defn cube-round [[x y z]]
   ;; http://www.redblobgames.com/grids/hexagons/#rounding
   (let [rx (Math/round x)
         ry (Math/round y)
@@ -26,23 +26,57 @@
         dx (Math/abs (- rx x))
         dy (Math/abs (- ry y))
         dz (Math/abs (- rz z))]
-    (cond (and (< dy dx) (< dz dx)) [(- (+ ry rz)) ry rz]
-          (and (< dx dy) (< dz dy)) [rx (- (+ rx rz)) rz]
-          :else [rx ry (- (+ rx ry))])))
+    (apply vec3
+           (cond (and (< dy dx) (< dz dx)) [(- (+ ry rz)) ry rz]
+                 (and (< dx dy) (< dz dy)) [rx (- (+ rx rz)) rz]
+                 :else [rx ry (- (+ rx ry))]))))
 
 (def sqrt-3-over-3 (/ (Math/sqrt 3) 3))
 (def two-thirds (/ 2 3))
 
 (defn px->cube
   "px and py are assumed to be normalized to radius and offset"
-  [px py]
+  [[px py]]
   (let [x (- (* px sqrt-3-over-3)
              (/ py 3))
         z (* py two-thirds)
         y (- (+ x z))]
-    (cube-round x y z)))
+    (cube-round [x y z])))
 
 (defn cube->xy
   [[x y z]]
   (math/+ (math/* x-unit x) (math/* y-unit y) (math/* z-unit z)))
 
+(defn northeast-mirror-center [radius]
+  (vec3 (+ (* 2 radius) 1)
+        (- radius)
+        (- (+ radius 1))))
+
+(def mirror-centers
+  (memoize
+   (fn [radius]
+     (let [v (northeast-mirror-center radius)]
+       [v
+        (vec3 (- (:y v)) (- (:z v)) (- (:x v)))
+        (vec3 (:z v) (:x v) (:y v))
+        (vec3 (- (:x v)) (- (:y v)) (- (:z v)))
+        (vec3 (:y v) (:z v) (:x v))
+        (vec3 (- (:z v)) (- (:x v)) (- (:y v)))]))))
+
+(defn cube-length [v]
+  (/ (+ (Math/abs (:x v)) (Math/abs (:y v)) (Math/abs (:z v)))
+     2.0))
+
+(defn map-wrap-px [radius v-px]
+  (let [v (px->cube v-px)]
+    (if (<= (cube-length v) radius)
+      v-px
+      (let [centers (mirror-centers radius)]
+        (loop [i 0]
+          (if (> i 5)
+            v-px
+            (let [c (nth centers i)
+                  dv (math/- v c)]
+              (if (<= (cube-length dv) radius)
+                (math/- v-px (cube->xy c))
+                (recur (+ i 1))))))))))

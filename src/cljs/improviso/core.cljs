@@ -115,7 +115,7 @@ void main() {
   (let [w (.-innerWidth js/window)
         h (.-innerHeight js/window)
         proj (gl/ortho 0 0 w h -1 1)
-        map-id (d/q '[:find ?m . :where [?m :map/radius]] @conn)
+        [[map-id map-radius]] (into [] (d/q '[:find ?m ?r :where [?m :map/radius ?r]] @conn))
         map-ent (d/entity @conn map-id)
         map-diameter (+ 1 (* 2 (:map/radius map-ent)))
         hradii (hex/map-width map-diameter)
@@ -127,9 +127,10 @@ void main() {
                    {:window-size (vec2 w h)
                     :projection proj
                     :radius-px radius
-                    :map-id map-id}))))
+                    :map-id map-id
+                    :map-radius map-radius}))))
 
-(defn make-tex-array [{:keys [map/radius map/hexes] :as m}]
+(defn make-tex-array [radius {:keys [map/hexes]}]
   (let [diameter (+ 1  ; center hex
                     2  ; borders
                     (* 2 radius))
@@ -152,6 +153,7 @@ void main() {
                 radius-px
                 eye-pos
                 map-id
+                map-radius
                 selected-hex]}
         @(:user-data state)
         dom-node (rum/dom-node state)
@@ -165,21 +167,20 @@ void main() {
                     (geom/translate (math/- eye-pos))
                     (math/* (geom/scale M44 (vec3 inv-radius-px inv-radius-px 1)))
                     (geom/translate (math/- (math/* window-size 0.5))))
-        [map-radius tex] (or (.-tex gl)
-                             (let [{:keys [map/radius] :as mapm}
-                                   (d/pull @conn '[:map/radius {(limit :map/hexes nil) [*]}] map-id)
-                                   diameter (+ 1 2 (* 2 radius))  ; 2 for margins
-                                   opts {:width diameter
-                                         :height diameter
-                                         :format glc/rgba
-                                         :filter [glc/nearest glc/nearest]
-                                         :wrap [glc/clamp-to-edge glc/clamp-to-edge]
-                               ;          :type glc/float
-                                         :pixels (make-tex-array mapm)}
-                                   t (buf/make-texture gl opts)
-                                   ret [radius t]]
-                               (set! (.-tex gl) ret)
-                               ret))
+        tex (or (.-tex gl)
+                (let [mapm
+                      (d/pull @conn '[{(limit :map/hexes nil) [*]}] map-id)
+                      diameter (+ 1 2 (* 2 map-radius)) ; 2 for margins
+                      opts {:width diameter
+                            :height diameter
+                            :format glc/rgba
+                            :filter [glc/nearest glc/nearest]
+                            :wrap [glc/clamp-to-edge glc/clamp-to-edge]
+                                        ;          :type glc/float
+                            :pixels (make-tex-array map-radius mapm)}
+                      t (buf/make-texture gl opts)]
+                  (set! (.-tex gl) t)
+                  t))
         shader (shader/make-shader-from-spec gl line-shader-spec)
         model (-> (rect/rect (math/- (math/div window-size 2)) window-size)
                   (gl/as-gl-buffer-spec {})
@@ -205,21 +206,25 @@ void main() {
                 radius-px
                 eye0-pos
                 anchor
-                map-id]}
+                map-id
+                map-radius]}
         @(:user-data state)
         mouse-px (math/- (vec2 (.-clientX e) (.-clientY e)) (math/div window-size 2))
         mouse-pos (math/- (math/div mouse-px radius-px) eye-pos)
-        [x y z] (hex/px->cube (:x mouse-pos) (:y mouse-pos))]
+        [x y z] (hex/px->cube mouse-pos)]
     (println "selected hex" x y z)
     (swap! (:user-data state)
            (fn [old]
              (cond-> old
                true (assoc :selected-hex (vec3 x y z))
                anchor (merge
-                       {:eye-pos (math/+ eye0-pos
-                                         (math/div (math/- (vec2 (.-clientX e) (.-clientY e))
-                                                           anchor)
-                                                   radius-px))}))))))
+                       {:eye-pos
+                        (hex/map-wrap-px
+                         map-radius
+                         (math/+ eye0-pos
+                                 (math/div (math/- (vec2 (.-clientX e) (.-clientY e))
+                                                   anchor)
+                                           radius-px)))}))))))
 
 (defn end-drag [state]
   (swap! (:user-data state) dissoc :anchor :eye0-pos))
