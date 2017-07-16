@@ -245,7 +245,7 @@ void main() {
 
 (defn on-wheel [state e]
   (swap! (:user-data state)
-         (fn [{:keys [window-size radius-px eye-pos] :as old}]
+         (fn [{:keys [window-size radius-px eye-pos map-radius] :as old}]
            (let [scale (- 1 (* (.-deltaY e) wheel-scale-factor))
                  mouse-pos (math/+ eye-pos
                                    (math/div (math/- (vec2 (.-clientX e) (.-clientY e))
@@ -253,9 +253,11 @@ void main() {
                                              radius-px))]
              (merge old
                     {:radius-px (* radius-px scale)
-                     :eye-pos (math/+ mouse-pos
-                                      (math/* (math/- eye-pos mouse-pos)
-                                              scale))})))))
+                     :eye-pos (hex/map-wrap-px
+                               map-radius
+                               (math/+ mouse-pos
+                                       (math/* (math/- eye-pos mouse-pos)
+                                               scale)))})))))
 
 (defn when-ready []
   (sente/send! [:terrain/make-map]
