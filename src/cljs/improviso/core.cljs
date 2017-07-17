@@ -211,12 +211,12 @@ void main() {
         @(:user-data state)
         mouse-px (math/- (vec2 (.-clientX e) (.-clientY e)) (math/div window-size 2))
         mouse-pos (math/- (math/div mouse-px radius-px) eye-pos)
-        [x y z] (hex/px->cube mouse-pos)]
-    (println "selected hex" x y z)
+        mouse-cube (hex/map-wrap map-radius (hex/px->cube mouse-pos))]
+    (apply println "selected hex" mouse-cube)
     (swap! (:user-data state)
            (fn [old]
              (cond-> old
-               true (assoc :selected-hex (vec3 x y z))
+               true (assoc :selected-hex mouse-cube)
                anchor (merge
                        {:eye-pos
                         (hex/map-wrap-px

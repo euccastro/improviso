@@ -20,8 +20,6 @@ wraparound
 *** in warping?
 ** noisify warping "radius"
 ** wraparound
-*** wrap on zoom
-*** wrap selection
 *** terrain: smoothstep across different mirror-centers
 * Someday/maybe
 ** reify view state, use it to parameterize common operations?
