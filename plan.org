@@ -22,6 +22,7 @@ wraparound
 ** wraparound
 *** terrain: smoothstep across different mirror-centers
 * Someday/maybe
+** restrict zoom so we never see blank spots?
 ** reify view state, use it to parameterize common operations?
 *** transformations between spaces
 *** operations under some space

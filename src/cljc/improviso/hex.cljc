@@ -68,17 +68,15 @@
      2.0))
 
 (defn map-wrap [radius v]
-  (if (<= (cube-length v) radius)
-    v
-    (let [centers (mirror-centers radius)]
-      (loop [i 0]
-        (if (> i 5)
-          v
-          (let [c (nth centers i)
-                dv (math/- v c)]
-            (if (<= (cube-length dv) radius)
-              dv
-              (recur (+ i 1)))))))))
+  (loop [centers (cons (vec3 0 0 0)
+                       (mirror-centers radius))]
+    (if (nil? centers)
+      v
+      (let [c (first centers)
+            dv (math/- v c)]
+        (if (<= (cube-length dv) radius)
+          dv
+          (recur (rest centers)))))))
 
 (defn map-wrap-px [radius v-px]
   (let [v (px->cube v-px)
