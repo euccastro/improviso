@@ -15,12 +15,12 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
+** wraparound
+*** terrain: smoothstep across different mirror-centers
 ** noisify lacunarity/weight of different octaves
 *** in main sampling
 *** in warping?
 ** noisify warping "radius"
-** wraparound
-*** terrain: smoothstep across different mirror-centers
 * Someday/maybe
 ** restrict zoom so we never see blank spots?
 ** reify view state, use it to parameterize common operations?

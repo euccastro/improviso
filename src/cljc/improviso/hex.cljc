@@ -56,7 +56,8 @@
   (memoize
    (fn [radius]
      (let [v (northeast-mirror-center radius)]
-       [v
+       [(vec3 0.0 0.0 0.0)
+        v
         (vec3 (- (:y v)) (- (:z v)) (- (:x v)))
         (vec3 (:z v) (:x v) (:y v))
         (vec3 (- (:x v)) (- (:y v)) (- (:z v)))
@@ -67,16 +68,28 @@
   (/ (+ (Math/abs (:x v)) (Math/abs (:y v)) (Math/abs (:z v)))
      2.0))
 
-(defn map-wrap [radius v]
-  (loop [centers (cons (vec3 0 0 0)
-                       (mirror-centers radius))]
-    (if (nil? centers)
-      v
-      (let [c (first centers)
-            dv (math/- v c)]
-        (if (<= (cube-length dv) radius)
-          dv
-          (recur (rest centers)))))))
+(defn centers-around-origin [o radius]
+  (map #(math/+ o %) (mirror-centers radius)))
+
+(defn map-wrap
+  ([radius v] (map-wrap radius v (vec3 0 0 0)))
+  ([radius v origin]
+   (loop [centers (centers-around-origin origin radius)
+          closest-dist nil
+          closest-center nil]
+     (if (empty? centers)
+       ;; XXX somehow stop recalculating already visited centers?
+       (recur (centers-around-origin closest-center radius)
+              nil
+              nil)
+       (let [c (first centers)
+             dv (math/- v c)
+             dist (cube-length dv)]
+         (if (<= dist radius)
+           dv
+           (if (or (nil? closest-dist) (< dist closest-dist))
+             (recur (rest centers) dist c)
+             (recur (rest centers) closest-dist closest-center))))))))
 
 (defn map-wrap-px [radius v-px]
   (let [v (px->cube v-px)
