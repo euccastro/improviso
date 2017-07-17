@@ -15,8 +15,11 @@ latitude positivo para embaixo
 longitude de 2 em 2 e alternando pares e impares entre rows
 wraparound
 * Next Actions
-** wraparound
-*** terrain: smoothstep across different mirror-centers
+** move stuff to client side!
+for faster turnaround while editing, and perhaps to render eventually?
+*** see what else we can move
+*** consider committing to noise2 so I can move noise to the client
+*** consider running in GLSL and reading textures to fetch results!
 ** noisify lacunarity/weight of different octaves
 *** in main sampling
 *** in warping?

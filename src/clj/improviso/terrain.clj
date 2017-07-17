@@ -8,21 +8,23 @@
 
 (def rescale-factor 1.1548607)
 
-(def map-radius 128)
+(def map-radius 64)
 
-(def sea-level 0.8)
+(def sea-level 0.60)
 
-(def border-saturation-factor 2.0)
+(def border-saturation-factor 1.0)
 
 (def flat-land false)
 
 (def flat-sea false)
 
+(def rng-seed 15)
+
 (defn sample [osn scale v]
   (let [[x y] (math/* v scale)]
     (comment (* rescale-factor (noise2 x y)))
-    (comment (* rescale-factor (noise3 x y 3.5)))
-    (* rescale-factor (.eval osn x y))))
+    (comment (* rescale-factor (.eval osn x y)))
+    (* rescale-factor (noise3 x y 3.5))))
 
 (defn average [& nums]
   (/ (apply + nums) (count nums)))
@@ -60,10 +62,10 @@
         abs-height (/ (+ rel-height 1.0) 2.0)]
     (if (< abs-height sea-level)
       [0.0 (if flat-sea 0.3 abs-height) 1.0 1.0]
-      [1.0 (if flat-land 0.8 abs-height) 0.0 1.0])))
+      [0.9 (if flat-land 0.8 abs-height) 0.2 1.0])))
 
 (defn make-map []
-  (let [osn (OpenSimplexNoise. 66)]
+  (let [osn (OpenSimplexNoise. rng-seed)]
     {:map/radius map-radius
      :map/hexes (into []
                       (for [x (range (- map-radius) (+ 1 map-radius))
