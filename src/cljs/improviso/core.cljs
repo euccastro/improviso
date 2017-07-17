@@ -90,7 +90,8 @@ vec3 px2cube(in vec2 v) {
 
 void main() {
   vec4 pos4 = invtxn * vec4(pos, 0.0, 1.0);
-  vec3 cube = cube_wrap(px2cube(pos4.xy));
+  vec3 raw_cube = px2cube(pos4.xy);
+  vec3 cube = cube_wrap(raw_cube);
   if (cube == selectedhex) {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
@@ -99,6 +100,9 @@ void main() {
     float u = (1.5 + cube.x + mapradius) / diameter;
     float v = (1.5 + cube.z + mapradius) / diameter;
     gl_FragColor = texture2D(maptex, vec2(u, v));
+    if (cube_length(raw_cube) > mapradius) {
+      gl_FragColor.a = min(0.6, gl_FragColor.a);
+    }
   }
 }
 "
