@@ -67,16 +67,20 @@
   (/ (+ (Math/abs (:x v)) (Math/abs (:y v)) (Math/abs (:z v)))
      2.0))
 
+(defn map-wrap [radius v]
+  (if (<= (cube-length v) radius)
+    v
+    (let [centers (mirror-centers radius)]
+      (loop [i 0]
+        (if (> i 5)
+          v
+          (let [c (nth centers i)
+                dv (math/- v c)]
+            (if (<= (cube-length dv) radius)
+              dv
+              (recur (+ i 1)))))))))
+
 (defn map-wrap-px [radius v-px]
-  (let [v (px->cube v-px)]
-    (if (<= (cube-length v) radius)
-      v-px
-      (let [centers (mirror-centers radius)]
-        (loop [i 0]
-          (if (> i 5)
-            v-px
-            (let [c (nth centers i)
-                  dv (math/- v c)]
-              (if (<= (cube-length dv) radius)
-                (math/- v-px (cube->xy c))
-                (recur (+ i 1))))))))))
+  (let [v (px->cube v-px)
+        wrap-v (map-wrap radius v)]
+    (math/+ v-px (cube->xy (math/- wrap-v v)))))
