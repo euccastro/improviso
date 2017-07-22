@@ -10,7 +10,7 @@
 
 (def map-radius 64)
 
-(def sea-level 0.60)
+(def sea-level 0.7)
 
 (def border-saturation-factor 1.0)
 
@@ -18,28 +18,40 @@
 
 (def flat-sea false)
 
-(def rng-seed 15)
+(def rng-seed 141)
+
+(def warp-offset 3)
 
 (defn sample [osn scale v]
   (let [[x y] (math/* v scale)]
     (comment (* rescale-factor (noise2 x y)))
-    (comment (* rescale-factor (.eval osn x y)))
-    (* rescale-factor (noise3 x y 3.5))))
+    (comment (* rescale-factor (noise3 x y 3.5)))
+    (* rescale-factor (.eval osn x y))
+    ))
 
 (defn average [& nums]
   (/ (apply + nums) (count nums)))
 
-(defn samples [osn v scales]
-  (apply average (map #(sample osn % v) scales)))
+(defn samples
+  "Freqs are assumed to be octaves (ie., each one half the next one)"
+  [osn v freqs]
+  (reduce (fn [accum [i val]]
+            (+ accum (/ val (+ i 2))))
+          0
+          (map-indexed (fn [i freq]
+                         [i (sample osn freq v)])
+                       freqs)))
 
 (defn coords->height:1-center [osn v]
   (let [v (math/div (hex/cube->xy v) 4.0)
-        warp-x (samples osn (math/+ v (vec2 120.0 240.0)) [0.0078125 0.015625 0.03125 0.125 0.5])
-        warp-y (samples osn (math/+ v (vec2 240.0 120.0)) [0.0078125 0.015625 0.03125 0.125 0.5])]
+        warp-x (samples osn (math/+ v (vec2 120.0 240.0)) [0.125 0.25])
+        warp-y (samples osn (math/+ v (vec2 240.0 120.0)) [0.125 0.25])
+        ;[warp-x warp-y] [0.0 0.0]
+        ]
     (samples osn
-             (vec2 (+ (:x v) (* warp-x 12.0))
-                   (+ (:y v) (* warp-y 12.0)))
-             [0.125 0.25 0.25 0.5])))
+             (vec2 (+ (:x v) (* warp-x warp-offset))
+                   (+ (:y v) (* warp-y warp-offset)))
+             [0.2 0.4 0.8])))
 
 (defn square [x]
   (* x x))
